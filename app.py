@@ -4,7 +4,7 @@ import requests
 
 app = Flask(__name__)
 
-# homepage where you select to explore earth or space
+# homepage where you select to explore the earth or space
 @app.route("/")
 def explore():
     return render_template("explore.html")
