@@ -1,2 +1,2 @@
 # nasa-app
-A Flask App integrating the NASA API.
+A Flask App integrating the NASA Open API. This application allows for users to explore NASA's daily earth and astronomy images. Keywords are extracted from the image descriptions using the PyTextRank library to perform NLP. These keywords are hyperlinked to the search results of the keyword within the NASA Image and Video Library, where users can further explore media relating to these keywords.
