@@ -1,14 +1,21 @@
 <!DOCTYPE html>
-<html land="en">
+<html lang="en">
 <head>
+    {% block head %}
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>{% block title %} NASA Application {% endblock title %}</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    {% endblock head %}
 </head>
 
 <body>
+    <!-- Page Content -->
     {% block body %}
         <h1> Welcome to my NASA map and image page! </h1>
     {% endblock body %}
+
 </body>
 
 </html>
