@@ -1,16 +1,19 @@
 {% extends "base.html" %}
 
 {% block body %}
-    <h1> NASA's Astronomy Picture of the Day </h1>
+    <h1> Explore NASA's Astronomy Picture of the Day </h1>
     {% for date, img in images_data.items() %}
         <h3> {{ date }}: {{ img["title"] }} </h3>
         <div class="img-row">
             <img src="{{ img['image'] }}" alt="Astronomy Picture of the Day" class="img">
-            <p class="description">Description of Image: 
+            <p class="description">Image Description: 
                 <br> {{ img["caption"] }} 
-                <br>
-                <br> Keywords:
-                <br> {{ img["keywords"] }} 
+                <br><br>
+                Explore Keywords in NASA's Image and Video Library:
+                {% for keyword, url in img["keywords"].items() %}
+                    <br> 
+                    <a href="{{ url }}" target="_blank"> {{ keyword }} </a>
+                {% endfor %}
             </p>
         </div>
         <br>
