@@ -19,6 +19,50 @@ app = Flask(__name__)
 def explore():
     return render_template("explore.html")
 
+# EARTH
+# route to EPIC earth pictures
+@app.route("/earth")
+def earth_images():
+    key = "Ow6qt32sEB5V8P4k7xMFluOM2cEEyGyTrRgQ7B3P"
+    try:
+        #extract natural and enhanced images
+        response = requests.get(url="https://epic.gsfc.nasa.gov/api/natural")
+        response_enhanced = requests.get(url="https://epic.gsfc.nasa.gov/api/enhanced")
+        print(f"Status code: {response.status_code}")
+    except requests.exceptions.HTTPError as http_error:
+        print(f"HTTP Error: {http_error}")
+    except requests.exceptions.RequestException as error:
+        print(f"Error: {error}")
+
+    #convert natural and enhanced image data to json
+    data = response.json()
+    data_enhanced = response_enhanced.json()
+
+    #extract most recent date of image release for natural images
+    year = data[0]["date"][:4]
+    month = data[0]["date"][5:7]
+    day = data[0]["date"][8:10]
+    #extract image urls for both natural 
+    image_urls = {}
+    for img_nat in data:
+        image_urls[img_nat["identifier"]]={"natural":f"https://epic.gsfc.nasa.gov/archive/natural/{year}/{month}/{day}/png/{img_nat["image"]}.png"}
+
+    #extract most recent date for enhanced images
+    year_enhanced = data_enhanced[0]["date"][:4]
+    month_enhanced = data_enhanced[0]["date"][5:7]
+    day_enhanced = data_enhanced[0]["date"][8:10]
+    #extract urls for enhanced images
+    enhanced_urls = {}
+    for img_enhanced in data_enhanced:
+        enhanced_urls[img_enhanced["identifier"]]={"enhanced":f"https://epic.gsfc.nasa.gov/archive/enhanced/{year_enhanced}/{month_enhanced}/{day_enhanced}/png/{img_enhanced["image"]}.png"}
+
+    return render_template("earth.html", 
+                        image_urls=image_urls, 
+                        enhanced_urls = enhanced_urls, 
+                        year = year, month=month, day=day,
+                        year_enhanced = year_enhanced,
+                        month_enhanced = month_enhanced,
+                        day_enhanced = day_enhanced)
 
 # SPACE
 # route to astronomy pictures

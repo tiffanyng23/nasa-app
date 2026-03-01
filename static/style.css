@@ -16,8 +16,9 @@ body {
 }
 
 p {
-    color: white;
     font-family: "Courier New", "Arial";
+    color: white;
+    text-align: center;
 }
 
 a {
@@ -31,7 +32,7 @@ a {
     height: 100vh;
 }
 
-.img-row {
+.astronomy-row {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -48,4 +49,7 @@ a {
 .description {
     max-width: 600px;
     color: white;
+    text-align: left;
 }
+
+

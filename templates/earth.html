@@ -4,25 +4,22 @@ Map Representation of Natural Events
 {% endblock title %}
 
 {% block body %}
-<h1>Map Representation of Natural Events from the Past 4 Weeks</h1>
-<table id="data" class="table table-striped">
-    <thead>
-        <tr>
-            <th>Date</th>
-            <th>Type</th>
-            <th>Title</th>
-            <th>Magnitude</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for event in earth_events %}
-            <tr>
-                <td>{{ event["date"] }}</td>
-                <td>{{ event["type"] }}</td>
-                <td>{{ event["title"] }}</td>
-                <td>{{ event["magnitude"] }}</td>
-            </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<h1>Explore Images from NASA's Earth Polychromatic Imaging Camera (EPIC)</h1>
+
+<div class = "natural-imgs">
+<h3>Natural Images from {{year}}-{{month}}-{{day}}</h3>
+<p>Natural Colour Imagery: Images were created within the human visual range, with colour and brightness adjusted to represent what would be produced from a camera.</p>
+{% for url in image_urls.values() %}
+    <img src="{{ url['natural'] }}" alt="Daily Earth Image" class="img">
+{% endfor %}
+</div>
+
+<div class="enhanced-imgs">
+<h3>Enhanced Images from {{year_enhanced}}-{{month_enhanced}}-{{day_enhanced}}</h3>
+<p>Enhanced Colour Imagery: Images were created to enhance land features, produced using a logarithmic transformation applied to each pixel.</p>
+{% for url in enhanced_urls.values() %}
+    <img src="{{ url['enhanced'] }}" alt="Daily Earth Image" class="img">
+{% endfor %}
+</div>
+
 {% endblock body %}

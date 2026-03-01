@@ -4,7 +4,7 @@
     <h1> Explore NASA's Astronomy Picture of the Day </h1>
     {% for date, img in images_data.items() %}
         <h3> {{ date }}: {{ img["title"] }} </h3>
-        <div class="img-row">
+        <div class="astronomy-row">
             <img src="{{ img['image'] }}" alt="Astronomy Picture of the Day" class="img">
             <p class="description">Image Description: 
                 <br> {{ img["caption"] }} 
