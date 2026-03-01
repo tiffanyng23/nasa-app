@@ -1,16 +1,10 @@
 from flask import Flask, render_template
 from flask_bootstrap import Bootstrap5
 from datetime import datetime, timedelta
-from json import dumps
-from plotly import utils
-import pandas as pd
-import plotly
-import plotly.express as px
-import plotly.io as pio
 import json
+import pytextrank
 import requests
 import spacy
-import pytextrank
 
 app = Flask(__name__)
 
