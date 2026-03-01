@@ -1,5 +1,4 @@
 from flask import Flask, render_template
-from flask_bootstrap import Bootstrap5
 from datetime import datetime, timedelta
 import json
 import pytextrank
