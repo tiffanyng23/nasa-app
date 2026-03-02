@@ -27,10 +27,31 @@ a {
     font-family: "Courier New", "Arial";
 }
 
+ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    background-color: black;
+    display: flex;
+}
+
+ul li a {
+    display: block;
+    color: white;
+    padding: 14px 16px;
+    text-decoration: underline;
+}
+
+ul li a:hover {
+    background-color: #3b3939;
+}
+
 .explore-options {
-    display: grid;
-    place-items: center;
-    height: 100vh;
+    display: flex;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    height: 100px;
 }
 
 .astronomy-row {

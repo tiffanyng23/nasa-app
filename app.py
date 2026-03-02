@@ -12,6 +12,11 @@ app = Flask(__name__)
 def explore():
     return render_template("explore.html")
 
+# EARTH'S NATURAL EVENTS
+@app.route("/events")
+def events():
+    return render_template("events.html")
+
 # EARTH
 # route to EPIC earth pictures
 @app.route("/earth")
