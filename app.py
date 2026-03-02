@@ -107,4 +107,7 @@ def weekly_images():
     #reverse order of images so it displays as most recent first
     images = dict(reversed(images_data.items()))
 
-    return render_template("space.html", images_data = images, )
+    return render_template("space.html", images_data = images)
+
+if __name__ == "__main__":
+    app.run(debug=True)
