@@ -7,6 +7,9 @@ This page uses the Earth Polychromatic Imaging Camera (EPIC) API to display imag
 ### Space
 This page display NASA's Astronomy Picture of the Day (APOD) for the past 10 days, providing the image along with the image description. Keywords are extracted from the image descriptions by NLP using the PyTextRank library. These keywords are hyperlinked to the search results of the keyword within the NASA Image and Video Library, where users can further explore media relating to these keywords.
 
+### Natural Events
+This page allows users to track natural event occurences on a map. The data is sourced from the NASA Earth Observatory Natural Event Tracker (EONET) API. Users are able to select a time window for natural event occurences by choosing a start and end date. Please note that the natural events tracked in this API appear to be only wildfires, severe storms (hurricanes, cyclones, tornadoes, etc.), and volcanic eruptions. It is possible that the API does not comprehensively track all occurences of these events.
+
 ## How to Use this Project
 1. Clone the repository.
 2. Set up a Python virtual environment.
