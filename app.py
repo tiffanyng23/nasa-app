@@ -167,7 +167,7 @@ def weekly_images():
 
         # NLP with PyTestRank for keyword extraction from image description
         #identify keywords from description to use in NASA image/video library
-        text = ": ".join([img["title"],img["explanation"]])
+        text = img["explanation"]
         nlp = spacy.load("en_core_web_sm")
         nlp.add_pipe("textrank")
         summary = nlp(text)
