@@ -1,5 +1,27 @@
 {% extends "base.html" %}
-
+{% block title %}
+Map Representation of Natural Events
+{% endblock title %}
 {% block body %}
-<p>Currently building the page.</p>
+<h1>Earth Natural Event Tracker from the Last 90 Days</h1>
+<p>Sourced from NASA EONET API</p>
+<div class = "form-container">
+<form id="date-form" action="/events" method="POST">
+    <label for="category">Category</label>
+    <select id="category" name="category">
+        <option value="all" {% if event_type == 'all' %}selected{% endif %}>All Categories</option>
+        <option value="wildfires" {% if event_type == 'wildfires' %}selected{% endif %}>Wildfires</option>
+        <option value="volcanoes" {% if event_type == 'volcanoes' %}selected{% endif %}>Volcanoes</option>
+        <option value="severeStorms" {% if event_type == 'severeStorms' %}selected{% endif %}>Severe Storms</option>
+    </select>
+    <label for="start">Start Date</label>
+    <input type="date" id="start" name="start" min="2020-01-01" max="{{ today }}" value= "{{ start }}">
+    <label for="end">End Date</label>
+    <input type="date" id="end" name="end" min="2020-01-01" max="{{ today }}" value= "{{ end }}">
+    <input type="submit" value="submit">
+</form>
+</div>
+<div class="map-container">
+    {{ map_html|safe }}
+</div>
 {% endblock body %}

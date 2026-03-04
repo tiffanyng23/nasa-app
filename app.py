@@ -1,9 +1,11 @@
-from flask import Flask, render_template
-from datetime import datetime, timedelta
+from flask import Flask, render_template, request
+from datetime import datetime, timedelta, timezone
 import json
 import pytextrank
 import requests
 import spacy
+import pandas as pd
+import folium
 
 app = Flask(__name__)
 
@@ -13,24 +15,98 @@ def explore():
     return render_template("explore.html")
 
 # EARTH'S NATURAL EVENTS
-@app.route("/events")
+@app.route("/events", methods=["POST", "GET"])
 def events():
-    return render_template("events.html")
+    if request.method == "POST": #after user submits dates
+        #gather start and end date from post
+        start = request.form.get("start")
+        end = request.form.get("end")
+        event_type = request.form.get("category") #get selected category
+        if event_type == "all": #if user selects all categories, assign all the event types
+            categories = "wildfires,volcanoes,severeStorms,drought,dustHaze,earthquakes,floods,landslides,manmade"
+        else: #assign user selected event type
+            categories = event_type
+
+    else: #page displayed before user selection should have dates set to today
+        end = datetime.today().strftime("%Y-%m-%d")
+        start = datetime.today().strftime("%Y-%m-%d")
+        categories = "wildfires,volcanoes,severeStorms,drought,dustHaze,earthquakes,floods,landslides,manmade"
+
+    #api call to gather eonet data
+    try:
+        response = requests.get("https://eonet.gsfc.nasa.gov/api/v3/events/geojson", params={"start":start, "end":end, "category":categories})
+        print(f"EONET Status Code: {response.status_code}")
+    except requests.exceptions.HTTPError as http_error:
+        print(f"EONET HTTP Error: {http_error}")
+    except requests.exceptions.RequestException as error:
+        print(f"EONET Error: {error}")
+        
+    #convert to json
+    data = response.json()
+    events_data = data["features"]
+
+    #extract data for table and map
+    events = {}
+    i=0
+    for event in events_data:
+        events[i] = {"id": event["properties"]["id"],
+                                            "title":event["properties"]["title"], 
+                                            "date":datetime.fromisoformat(event["properties"]["date"][0:-1]).astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
+                                            "category": event["properties"]["categories"][0]["id"], 
+                                            "longitude": event["geometry"]["coordinates"][0],
+                                            "latitude": event["geometry"]["coordinates"][1]}
+        i+=1
+
+    #map
+    m = folium.Map(location=(20, 0), zoom_start=2, tiles="OpenStreetMap")
+    #colour options of markers - based on category
+    color_options={"wildfires": "orange", "volcanoes":"darkred", "severeStorms":"darkblue", "manmade":"black", "landslides":"darkgreen", "floods":"lightblue", "earthquakes":"beige", "dustHaze":"gray"}
+        
+    #add coordintates to map
+    for index, event in events.items():
+        #popup description for each event
+        popup_description=f"<strong>{event['title']}</strong><br>Datetime: {event['date']}<br>Category: {event['category']}"
+        folium.CircleMarker(
+            location=[float(event["latitude"]), float(event["longitude"])],
+            radius=6,
+            popup=popup_description, 
+            fill=True, 
+            color=color_options[event["category"]] 
+            ).add_to(m)
+        
+    #convert to html
+    map_html = m._repr_html_()
+
+    #get max day
+    today = datetime.today().strftime("%Y-%m-%d")
+    #return category to template
+    if categories == "wildfires,volcanoes,severeStorms,drought,dustHaze,earthquakes,floods,landslides,manmade":
+        categories = "all"
+
+    return render_template("events.html", map_html=map_html, start=start, end=end, today=today, event_type=categories)
+
 
 # EARTH
 # route to EPIC earth pictures
 @app.route("/earth")
 def earth_images():
-    key = "Ow6qt32sEB5V8P4k7xMFluOM2cEEyGyTrRgQ7B3P"
     try:
         #extract natural and enhanced images
         response = requests.get(url="https://epic.gsfc.nasa.gov/api/natural")
-        response_enhanced = requests.get(url="https://epic.gsfc.nasa.gov/api/enhanced")
-        print(f"Status code: {response.status_code}")
+        print(f"EPIC Natural Status code: {response.status_code}")
     except requests.exceptions.HTTPError as http_error:
-        print(f"HTTP Error: {http_error}")
+        print(f"EPIC HTTP Error: {http_error}")
     except requests.exceptions.RequestException as error:
-        print(f"Error: {error}")
+        print(f"EPIC Error: {error}")
+
+    try:
+        #extract natural and enhanced images
+        response_enhanced = requests.get(url="https://epic.gsfc.nasa.gov/api/enhanced")
+        print(f"EPIC Enhanced Status code: {response_enhanced.status_code}")
+    except requests.exceptions.HTTPError as http_error:
+        print(f"EPIC HTTP Error: {http_error}")
+    except requests.exceptions.RequestException as error:
+        print(f"EPIC Error: {error}")
 
     #convert natural and enhanced image data to json
     data = response.json()
@@ -73,11 +149,11 @@ def weekly_images():
     #astronomy picture of the day
     try:
         response = requests.get(url = "https://api.nasa.gov/planetary/apod", params = {"end_date": date, "start_date": start, "api_key": key})
-        print(f"Status code: {response.status_code}")
+        print(f"APOD Status code: {response.status_code}")
     except requests.exceptions.HTTPError as http_error:
-        print(f"HTTP Error: {http_error}")
+        print(f"APOD HTTP Error: {http_error}")
     except requests.exceptions.RequestException as error:
-        print(f"Error: {error}")
+        print(f"APOD Error: {error}")
 
     #convert to json to get data
     data = response.json()

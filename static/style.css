@@ -27,6 +27,15 @@ a {
     font-family: "Courier New", "Arial";
 }
 
+label {
+    color: white;
+    font-family: "Courier New", "Arial";
+}
+
+nav {
+    margin: 0 auto;
+}
+
 ul {
     list-style-type: none;
     margin: 0;
@@ -45,6 +54,7 @@ ul li a {
 ul li a:hover {
     background-color: #3b3939;
 }
+
 
 .explore-options {
     display: flex;
@@ -74,4 +84,14 @@ ul li a:hover {
     text-align: left;
 }
 
+.map-container {
+    width: 75%;
+    height: 500px;
+    margin: 0 auto;
+}
 
+.form-container {
+    width:700px;
+    margin: 0 auto; 
+    padding: 20px;
+}
