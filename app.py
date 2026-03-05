@@ -27,7 +27,7 @@ def events():
         else: #assign user selected event type
             categories = event_type
 
-    else: #page displayed before user selection should have dates set to today
+    else: #page displayed before user selection, should have dates set to today
         end = datetime.today().strftime("%Y-%m-%d")
         start = datetime.today().strftime("%Y-%m-%d")
         categories = "wildfires,volcanoes,severeStorms,drought,dustHaze,earthquakes,floods,landslides,manmade"
@@ -35,55 +35,66 @@ def events():
     #api call to gather eonet data
     try:
         response = requests.get("https://eonet.gsfc.nasa.gov/api/v3/events/geojson", params={"start":start, "end":end, "category":categories})
+        response.raise_for_status()
         print(f"EONET Status Code: {response.status_code}")
     except requests.exceptions.HTTPError as http_error:
         print(f"EONET HTTP Error: {http_error}")
+        #create map
+        m = folium.Map(location=(20, 0), zoom_start=2, tiles="OpenStreetMap")
+        map_html = m._repr_html_()
+        today = datetime.today().strftime("%Y-%m-%d") #assign today value
+        return render_template("events.html", map_html=map_html, start=start, end=end, today=today, event_type=categories)
     except requests.exceptions.RequestException as error:
         print(f"EONET Error: {error}")
-        
-    #convert to json
-    data = response.json()
-    events_data = data["features"]
+        #create map
+        m = folium.Map(location=(20, 0), zoom_start=2, tiles="OpenStreetMap")
+        map_html = m._repr_html_()
+        today = datetime.today().strftime("%Y-%m-%d")
+        render_template("events.html", map_html=map_html, start=start, end=end, today=today, event_type=categories)
+    else: #if api call is successful
+        #convert object to json
+        data = response.json()
+        events_data = data["features"]
 
-    #extract data for table and map
-    events = {}
-    i=0
-    for event in events_data:
-        events[i] = {"id": event["properties"]["id"],
-                                            "title":event["properties"]["title"], 
-                                            "date":datetime.fromisoformat(event["properties"]["date"][0:-1]).astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
-                                            "category": event["properties"]["categories"][0]["id"], 
-                                            "longitude": event["geometry"]["coordinates"][0],
-                                            "latitude": event["geometry"]["coordinates"][1]}
-        i+=1
+        #extract data for table and map
+        events = {}
+        i=0
+        for event in events_data:
+            events[i] = {"id": event["properties"]["id"],
+                                                "title":event["properties"]["title"], 
+                                                "date":datetime.fromisoformat(event["properties"]["date"][0:-1]).astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
+                                                "category": event["properties"]["categories"][0]["id"], 
+                                                "longitude": event["geometry"]["coordinates"][0],
+                                                "latitude": event["geometry"]["coordinates"][1]}
+            i+=1
+        #map
+        m = folium.Map(location=(20, 0), zoom_start=2, tiles="OpenStreetMap")
+        #colour options of markers - based on category
+        color_options={"wildfires": "orange", "volcanoes":"darkred", "severeStorms":"darkblue", "manmade":"black", "landslides":"darkgreen", "floods":"lightblue", "earthquakes":"beige", "dustHaze":"gray"}
+                
+        #add coordintates to map
+        for index, event in events.items():
+            #popup description for each event
+            popup_description=f"<strong>{event['title']}</strong><br>Datetime: {event['date']}<br>Category: {event['category']}"
+            folium.CircleMarker(
+                location=[float(event["latitude"]), float(event["longitude"])],
+                radius=6,
+                popup=popup_description, 
+                fill=True, 
+                color=color_options[event["category"]] 
+                ).add_to(m)
+                
+        #convert map to html
+        map_html = m._repr_html_()
 
-    #map
-    m = folium.Map(location=(20, 0), zoom_start=2, tiles="OpenStreetMap")
-    #colour options of markers - based on category
-    color_options={"wildfires": "orange", "volcanoes":"darkred", "severeStorms":"darkblue", "manmade":"black", "landslides":"darkgreen", "floods":"lightblue", "earthquakes":"beige", "dustHaze":"gray"}
-        
-    #add coordintates to map
-    for index, event in events.items():
-        #popup description for each event
-        popup_description=f"<strong>{event['title']}</strong><br>Datetime: {event['date']}<br>Category: {event['category']}"
-        folium.CircleMarker(
-            location=[float(event["latitude"]), float(event["longitude"])],
-            radius=6,
-            popup=popup_description, 
-            fill=True, 
-            color=color_options[event["category"]] 
-            ).add_to(m)
-        
-    #convert to html
-    map_html = m._repr_html_()
+        # For display of input values on html template
+        # get max day
+        today = datetime.today().strftime("%Y-%m-%d")
+        #return category to template
+        if categories == "wildfires,volcanoes,severeStorms,drought,dustHaze,earthquakes,floods,landslides,manmade":
+            categories = "all"
 
-    #get max day
-    today = datetime.today().strftime("%Y-%m-%d")
-    #return category to template
-    if categories == "wildfires,volcanoes,severeStorms,drought,dustHaze,earthquakes,floods,landslides,manmade":
-        categories = "all"
-
-    return render_template("events.html", map_html=map_html, start=start, end=end, today=today, event_type=categories)
+        return render_template("events.html", map_html=map_html, start=start, end=end, today=today, event_type=categories)
 
 
 # EARTH
@@ -93,21 +104,28 @@ def earth_images():
     try:
         #extract natural and enhanced images
         response = requests.get(url="https://epic.gsfc.nasa.gov/api/natural")
+        response.raise_for_status()
         print(f"EPIC Natural Status code: {response.status_code}")
     except requests.exceptions.HTTPError as http_error:
         print(f"EPIC HTTP Error: {http_error}")
+        return render_template("earth.html", image_urls={}, enhanced_urls={})
     except requests.exceptions.RequestException as error:
         print(f"EPIC Error: {error}")
+        return render_template("earth.html", image_urls={}, enhanced_urls={})
 
     try:
         #extract natural and enhanced images
         response_enhanced = requests.get(url="https://epic.gsfc.nasa.gov/api/enhanced")
+        response_enhanced.raise_for_status()
         print(f"EPIC Enhanced Status code: {response_enhanced.status_code}")
     except requests.exceptions.HTTPError as http_error:
         print(f"EPIC HTTP Error: {http_error}")
+        return render_template("earth.html", image_urls={}, enhanced_urls={})
     except requests.exceptions.RequestException as error:
         print(f"EPIC Error: {error}")
+        return render_template("earth.html", image_urls={}, enhanced_urls={})
 
+    #if both api calls are successful
     #convert natural and enhanced image data to json
     data = response.json()
     data_enhanced = response_enhanced.json()
@@ -149,46 +167,49 @@ def weekly_images():
     #astronomy picture of the day
     try:
         response = requests.get(url = "https://api.nasa.gov/planetary/apod", params = {"end_date": date, "start_date": start, "api_key": key})
+        response.raise_for_status()
         print(f"APOD Status code: {response.status_code}")
     except requests.exceptions.HTTPError as http_error:
         print(f"APOD HTTP Error: {http_error}")
+        return render_template("space.html", images_data={})
     except requests.exceptions.RequestException as error:
         print(f"APOD Error: {error}")
+        return render_template("space.html", images_data={})
+    else:
+        #convert to json to get data
+        data = response.json()
+        
+        #extract data
+        images_data = {}
+        for img in data:
 
-    #convert to json to get data
-    data = response.json()
-    
-    #extract data
-    images_data = {}
-    for img in data:
+            #extract other data for each image
+            images_data[img["date"]] = {"title": img["title"], "image": img["url"], "caption": img["explanation"], "keywords":{}}
 
-        #extract other data for each image
-        images_data[img["date"]] = {"title": img["title"], "image": img["url"], "caption": img["explanation"], "keywords":{}}
+            # NLP with PyTestRank for keyword extraction from image description
+            #identify keywords from description to use in NASA image/video library
+            text = img["explanation"]
+            nlp = spacy.load("en_core_web_sm")
+            nlp.add_pipe("textrank")
+            summary = nlp(text)
 
-        # NLP with PyTestRank for keyword extraction from image description
-        #identify keywords from description to use in NASA image/video library
-        text = img["explanation"]
-        nlp = spacy.load("en_core_web_sm")
-        nlp.add_pipe("textrank")
-        summary = nlp(text)
+            #save each keyword extracted from pytextrank in a list (new list for each image)
+            for phrase in summary._.phrases[:8]:
+                #extract top 8 keywords from title + description
+                word = phrase.text
 
-        #save each keyword extracted from pytextrank in a list (new list for each image)
-        for phrase in summary._.phrases[:8]:
-            #extract top 8 keywords from title + description
-            word = phrase.text
+                #remove quotes for word
+                url_word = word.strip('')
+                #create url for each keyword to go to NASAs image and video library
+                url = f"https://images.nasa.gov/search?q={url_word}&page=1&media=image,video,audio&yearStart=1920&yearEnd=2026"
 
-            #remove quotes for word
-            url_word = word.strip('')
-            #create url for each keyword to go to NASAs image and video library
-            url = f"https://images.nasa.gov/search?q={url_word}&page=1&media=image,video,audio&yearStart=1920&yearEnd=2026"
+                #update dictionary with keyword:url key-value pair for each day
+                images_data[img["date"]]["keywords"][phrase.text] = url
 
-            #update dictionary with keyword:url key-value pair for each day
-            images_data[img["date"]]["keywords"][phrase.text] = url
+        #reverse order of images so it displays as most recent first
+        images = dict(reversed(images_data.items()))
 
-    #reverse order of images so it displays as most recent first
-    images = dict(reversed(images_data.items()))
-
-    return render_template("space.html", images_data = images)
+        return render_template("space.html", images_data = images)
 
 if __name__ == "__main__":
     app.run(debug=True)
