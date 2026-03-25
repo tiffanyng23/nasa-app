@@ -6,6 +6,7 @@ import requests
 import spacy
 import pandas as pd
 import folium
+import os
 
 app = Flask(__name__)
 
@@ -137,7 +138,7 @@ def earth_images():
     #extract image urls for both natural 
     image_urls = {}
     for img_nat in data:
-        image_urls[img_nat["identifier"]]={"natural":f"https://epic.gsfc.nasa.gov/archive/natural/{year}/{month}/{day}/png/{img_nat["image"]}.png"}
+        image_urls[img_nat["identifier"]]=f"https://epic.gsfc.nasa.gov/archive/natural/{year}/{month}/{day}/png/{img_nat["image"]}.png"
 
     #extract most recent date for enhanced images
     year_enhanced = data_enhanced[0]["date"][:4]
@@ -146,7 +147,7 @@ def earth_images():
     #extract urls for enhanced images
     enhanced_urls = {}
     for img_enhanced in data_enhanced:
-        enhanced_urls[img_enhanced["identifier"]]={"enhanced":f"https://epic.gsfc.nasa.gov/archive/enhanced/{year_enhanced}/{month_enhanced}/{day_enhanced}/png/{img_enhanced["image"]}.png"}
+        enhanced_urls[img_enhanced["identifier"]]=f"https://epic.gsfc.nasa.gov/archive/enhanced/{year_enhanced}/{month_enhanced}/{day_enhanced}/png/{img_enhanced["image"]}.png"
 
     return render_template("earth.html", 
                         image_urls=image_urls, 
@@ -160,13 +161,15 @@ def earth_images():
 # route to astronomy pictures
 @app.route("/space")
 def weekly_images():
-    key = "Ow6qt32sEB5V8P4k7xMFluOM2cEEyGyTrRgQ7B3P"
+    #get nasa api key
+    nasa_api_key = os.environ.get("NASA_API_KEY")
+    
     date = datetime.today().strftime("%Y-%m-%d")
     start = (datetime.today() - timedelta(days=10)).strftime("%Y-%m-%d")
 
     #astronomy picture of the day
     try:
-        response = requests.get(url = "https://api.nasa.gov/planetary/apod", params = {"end_date": date, "start_date": start, "api_key": key})
+        response = requests.get(url = "https://api.nasa.gov/planetary/apod", params = {"end_date": date, "start_date": start, "api_key": nasa_api_key})
         response.raise_for_status()
         print(f"APOD Status code: {response.status_code}")
     except requests.exceptions.HTTPError as http_error:
@@ -212,4 +215,5 @@ def weekly_images():
         return render_template("space.html", images_data = images)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=port, debug=True)

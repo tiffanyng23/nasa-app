@@ -2,20 +2,58 @@
 {% block body %}
 <h1>Explore Images from NASA's Earth Polychromatic Imaging Camera (EPIC)</h1>
 
-<div class = "natural-imgs">
-<h3>Natural Images from {{year}}-{{month}}-{{day}}</h3>
-<p>Natural Colour Imagery: Images were created within the human visual range, with colour and brightness adjusted to represent what would be produced from a camera.</p>
-{% for url in image_urls.values() %}
-    <img src="{{ url['natural'] }}" alt="Daily Earth Image" class="img">
-{% endfor %}
+<div class = "earth-card">
+    <div class="card-body">
+        <h3>Natural Images from {{year}}-{{month}}-{{day}}</h3>
+        <p>Natural Colour Imagery: Images were created within the human visual range, 
+            with colour and brightness adjusted to represent what would be produced from a camera.
+        </p>
+        <div id="carouselNat" class="carousel slide" data-bs-ride="false">
+            <div class="carousel-inner">
+                {% for url in image_urls.values() %}
+                    <div class="carousel-item{% if loop.first %} active{% endif %}">
+                        <div class="d-flex justify-content-center">
+                            <img src="{{ url }}" alt="Daily Earth Image" class="earth-img mx-auto">
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <button class="carousel-control-prev" type="button" data-bs-target="#carouselNat" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#carouselNat" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            </button>
+        </div>
+    </div>
 </div>
 
-<div class="enhanced-imgs">
-<h3>Enhanced Images from {{year_enhanced}}-{{month_enhanced}}-{{day_enhanced}}</h3>
-<p>Enhanced Colour Imagery: Images were created to enhance land features, produced using a logarithmic transformation applied to each pixel.</p>
-{% for url in enhanced_urls.values() %}
-    <img src="{{ url['enhanced'] }}" alt="Daily Earth Image" class="img">
-{% endfor %}
+<div class = "earth-card">
+    <div class="card-body">
+        <h3>Enhanced Images from {{year_enhanced}}-{{month_enhanced}}-{{day_enhanced}}</h3>
+        <p>Enhanced Colour Imagery: Images were created to enhance land features, 
+            produced using a logarithmic transformation applied to each pixel.
+        </p>
+        <div id="carouselEnhanced" class="carousel slide" data-bs-ride="false">
+            <div class="carousel-inner">
+                {% for url in enhanced_urls.values() %}
+                    <div class="carousel-item{% if loop.first %} active{% endif %}">
+                        <div class="d-flex justify-content-center">
+                            <img src="{{ url }}" alt="Daily Earth Image" class="earth-img mx-auto">
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <button class="carousel-control-prev" type="button" data-bs-target="#carouselEnhanced" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#carouselEnhanced" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            </button>
+        </div>
+    </div>
 </div>
 
 {% endblock body %}

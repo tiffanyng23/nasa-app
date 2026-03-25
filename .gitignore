@@ -1,7 +1,5 @@
 # Python bytecode
 __pycache__/
-*.py[cod]
-*$py.class
 
 # Virtual environments
 venv/
@@ -13,44 +11,18 @@ ENV/
 .env
 .env.*
 
-# Distribution / packaging
-build/
-dist/
-*.egg-info/
-.eggs/
-
-# Logs
-*.log
-
-# Jupyter Notebook checkpoints
-.ipynb_checkpoints
-
 # macOS
 .DS_Store
-
-# Windows
-Thumbs.db
 
 # VS Code
 .vscode/
 
-# PyCharm
-.idea/
-
-# Coverage reports
-.coverage
-htmlcov/
-
-# Testing
-.pytest_cache/
-
 # mypy
 .mypy_cache/
 
-# Flask
-instance/
-.webassets-cache
-
-# SQLite databases
-*.db
-*.sqlite3
+# Files
+.dockerignore
+.github/
+Dockerfile
+Procfile
+fly.toml

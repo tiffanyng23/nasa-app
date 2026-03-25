@@ -3,19 +3,19 @@
 {% block body %}
     <h1> Explore NASA's Astronomy Picture of the Day </h1>
     {% for date, img in images_data.items() %}
-        <h3> {{ date }}: {{ img["title"] }} </h3>
-        <div class="astronomy-row">
-            <img src="{{ img['image'] }}" alt="Astronomy Picture of the Day" class="img">
-            <p class="description">Image Description: 
-                <br> {{ img["caption"] }} 
-                <br><br>
-                Explore Keywords in NASA's Image and Video Library:
-                {% for keyword, url in img["keywords"].items() %}
-                    <br> 
-                    <a href="{{ url }}" target="_blank"> {{ keyword }} </a>
-                {% endfor %}
-            </p>
+        <div class="card"> 
+            <div class="card-body">
+                <h3> {{ date }}: {{ img["title"] }} </h3>
+                <img src="{{ img['image'] }}" alt="Astronomy Picture of the Day" class="card-img-top mx-auto d-block mb-4">
+                <p class="card-text"> {{ img["caption"] }} </p> 
+                <p class="card-text"> Explore Keywords in NASA's Image and Video Library: </p>
+                <div class="keywords d-flex">
+                    {% for keyword, url in img["keywords"].items() %}
+                        <a href="{{ url }}" target="_blank" class="card-link"> {{ keyword }} </a>
+                    {% endfor %}
+                </div>
+                </p>
+            </div>
         </div>
-        <br>
     {% endfor %}
 {% endblock body %}
