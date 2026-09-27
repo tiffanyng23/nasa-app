@@ -218,6 +218,7 @@ def weekly_images():
 # research studies
 @app.route("/research", methods= ["POST", "GET"])
 def search_engine():
+    # checks if db is up to date before returning results each type a user enters a search query
     #api request to retrieve all study ids
     if request.method == "POST":
         try:
@@ -296,7 +297,8 @@ def search_engine():
 
     # return summary data for dashboard
     # number of studies
-    # top space programs
+    # top space program
+    # top project type
     # top study factor keywords
     # top organisms
     # top study assay technology type 
