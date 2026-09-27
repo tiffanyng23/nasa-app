@@ -7,6 +7,7 @@ import spacy
 import pandas as pd
 import folium
 import os
+import sqlite3
 
 app = Flask(__name__)
 
@@ -163,7 +164,7 @@ def earth_images():
 def weekly_images():
     #get nasa api key
     nasa_api_key = os.environ.get("NASA_API_KEY")
-    
+    print(nasa_api_key)
     date = datetime.today().strftime("%Y-%m-%d")
     start = (datetime.today() - timedelta(days=10)).strftime("%Y-%m-%d")
 
@@ -213,6 +214,96 @@ def weekly_images():
         images = dict(reversed(images_data.items()))
 
         return render_template("space.html", images_data = images)
+
+# research studies
+@app.route("/research", methods= ["POST", "GET"])
+def search_engine():
+    #api request to retrieve all study ids
+    if request.method == "POST":
+        try:
+            #extract all datasets related to search
+            response = requests.get(url="https://visualization.osdr.nasa.gov/biodata/api/v2/datasets/")
+            response.raise_for_status()
+            print(f"Open Science Data code: {response.status_code}")
+        except requests.exceptions.HTTPError as http_error:
+            print(f"Open Science Data HTTP Error: {http_error}")
+            # if api request fails --> still display the same page
+            return render_template("research.html")
+        except requests.exceptions.RequestException as error:
+            print(f"Open Science Data  Error: {error}")
+            return render_template("research.html")
+    else:
+        #before user types in search query
+        return render_template("research.html")
+    
+    # convert json to dictionary
+    osd_dict = response.json()
+    osd_data = {}
+    for osd_id, endpoint in osd_dict.items():
+        osd_data[osd_id] = endpoint["REST_URL"]
+
+    # connect to nasa.db 
+    conn = sqlite3.connect("nasa.db")
+    cursor = conn.cursor()
+
+    # check if study id is in the database
+    for osd_id in osd_data.keys():
+        cursor.execute(
+            "SELECT id FROM studies WHERE id = ?",
+            (osd_id,)
+        )
+        result = cursor.fetchone()
+
+        # id is not in database --> second api request to get metadata
+        if result is None:
+            try:
+                id_response = requests.get(url=f"https://visualization.osdr.nasa.gov/biodata/api/v2/dataset/{osd_id}")
+                id_response.raise_for_status()
+                print(f"Study Retrieval code: {response.status_code}")
+            except requests.exceptions.HTTPError as http_error:
+                print(f"Study Retrieval HTTP Error: {http_error}")
+            except requests.exceptions.RequestException as error:
+                print(f"Study Retrieval  Error: {error}")
+
+            study_dict = id_response.json()
+
+            # insert metadata into table
+            cursor.execute(
+                    """INSERT INTO studies (id, rest_url, space_program, flight_program, mission_start, mission_end, mission_name, project_type, project_title, study_title, study_description, study_factor, publications, organism, assay_technology, assay_measure)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """, 
+                        (
+                            osd_id,
+                            study.get("REST_URL"),
+                            format_metadata(metadata.get("space program")),
+                            format_metadata(metadata.get("flight program")),
+                            format_metadata(metadata.get("mission", {}).get("start date")),
+                            format_metadata(metadata.get("mission", {}).get("end date")),
+                            format_metadata(metadata.get("mission", {}).get("name")),
+                            format_metadata(metadata.get("project type")),
+                            format_metadata(metadata.get("project title")),
+                            format_metadata(metadata.get("study title")),
+                            format_metadata(metadata.get("study description")),
+                            format_metadata(metadata.get("study factor type")),
+                            format_metadata(metadata.get("study publication title")),
+                            format_metadata(metadata.get("organism")),
+                            format_metadata(metadata.get("study assay technology type")),
+                            format_metadata(metadata.get("study assay measurement type"))
+                    )
+                )
+        conn.commit()
+        conn.close()
+
+    # return summary data for dashboard
+    # number of studies
+    # top space programs
+    # top study factor keywords
+    # top organisms
+    # top study assay technology type 
+
+    # return rows for study summary cards based on user query
+
+    return render_template("research.html")
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
