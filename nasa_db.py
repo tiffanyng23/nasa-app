@@ -2,7 +2,9 @@ import json
 import requests
 import os
 import sqlite3
+from datetime import datetime, timezone
 
+#metadata helper functions
 # handle metadata that returns strings or lists or are empty
 def format_metadata(value):
     # no value
@@ -13,6 +15,13 @@ def format_metadata(value):
         return ", ".join(value)
     # else, no need to format
     return value
+
+# handle empty release dates for public release date metadata
+def format_date(value):
+    if value is None or value == "":
+        return None
+    else:
+        return datetime.fromtimestamp((value), tz=timezone.utc).strftime("%Y/%m/%d")
 
 # store dataset metadata on sqlite3 (easier to retrieve for subsequent attempts)
 conn = sqlite3.connect("nasa.db")
@@ -32,6 +41,7 @@ cursor.execute("""
             project_title TEXT,
             study_title TEXT,
             study_description TEXT,
+            study_release_date DATE,
             study_factor TEXT,
             publications TEXT,
             organism TEXT,
@@ -87,8 +97,8 @@ for osd_id in osd_data.keys():
 
         # insert metadata into table
         cursor.execute(
-                    """INSERT INTO studies (id, rest_url, space_program, flight_program, mission_start, mission_end, mission_name, project_type, project_title, study_title, study_description, study_factor, publications, organism, assay_technology, assay_measure)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """INSERT INTO studies (id, rest_url, space_program, flight_program, mission_start, mission_end, mission_name, project_type, project_title, study_title, study_description, study_release_date, study_factor, publications, organism, assay_technology, assay_measure)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """, 
                         (
                             osd_id,
@@ -102,6 +112,7 @@ for osd_id in osd_data.keys():
                             format_metadata(metadata.get("project title")),
                             format_metadata(metadata.get("study title")),
                             format_metadata(metadata.get("study description")),
+                            format_date(format_metadata(metadata.get("study public release date"))),
                             format_metadata(metadata.get("study factor type")),
                             format_metadata(metadata.get("study publication title")),
                             format_metadata(metadata.get("organism")),

@@ -11,6 +11,25 @@ import sqlite3
 
 app = Flask(__name__)
 
+#metadata helper functions
+# handle metadata that returns strings or lists or are empty
+def format_metadata(value):
+    # no value
+    if value is None:
+        return ""
+    # check if metadata is a string
+    if isinstance(value, list):
+        return ", ".join(value)
+    # else, no need to format
+    return value
+
+# handle empty release dates for public release date metadata
+def format_date(value):
+    if value is None or value == "":
+        return None
+    else:
+        return datetime.fromtimestamp((value), tz=timezone.utc).strftime("%Y/%m/%d")
+
 # HOMEPAGE
 @app.route("/")
 def explore():
@@ -270,8 +289,8 @@ def search_engine():
 
             # insert metadata into table
             cursor.execute(
-                    """INSERT INTO studies (id, rest_url, space_program, flight_program, mission_start, mission_end, mission_name, project_type, project_title, study_title, study_description, study_factor, publications, organism, assay_technology, assay_measure)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """INSERT INTO studies (id, rest_url, space_program, flight_program, mission_start, mission_end, mission_name, project_type, project_title, study_title, study_description, study_release_date, study_factor, publications, organism, assay_technology, assay_measure)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """, 
                         (
                             osd_id,
@@ -285,6 +304,7 @@ def search_engine():
                             format_metadata(metadata.get("project title")),
                             format_metadata(metadata.get("study title")),
                             format_metadata(metadata.get("study description")),
+                            format_date(format_metadata(metadata.get("study public release date"))),
                             format_metadata(metadata.get("study factor type")),
                             format_metadata(metadata.get("study publication title")),
                             format_metadata(metadata.get("organism")),
@@ -296,8 +316,9 @@ def search_engine():
         conn.close()
 
     # return summary data for dashboard
-    # number of studies
-    # top space program
+    # data can be filtered as a user searches a query
+    # e.g. user searches skeletal muscle --> dashboard adjusts 
+    # top number of studies by space program
     # top project type
     # top study factor keywords
     # top organisms
