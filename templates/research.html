@@ -2,10 +2,68 @@
 
 {% block body %}
 <h1> Explore Research Conducted in Space! </h1>
-<form id = "seaech-form" action="/research" method="POST">
-    <label for="search"> Search: </label>
-    <input type="text" id="search" name ="search">
+<form id = "search-form" action="/research" method="POST">
+    <label for="sprogram"> Space Program: </label>
+    <input type="text" id="sprogram" name="space_program">
+
+    <label for ="fprogram"> Flight Program: </label>
+    <input type="text" id="fprogram" name="flight_program">
+
+    <label for="mname"> Mission Name: </label>
+    <input type="text" id="mname" name="mission_name">
+    <br>
+
+    <label> Keyword Search (include up to 5): </label>
+    <br>
+    <input text="text" id="keyword1" name="keyword_search1" maxlength= "50" size="100">
+    <select id="connector1" name="connect_keyword_1">
+        <option value="and"> AND </option>
+        <option value="or"> OR </option>
+    </select>
+
+    <input text="text" id="keyword2" name="keyword_search2" maxlength= "50" size="100">
+    <select id="connector2" name="connect_keyword_1">
+        <option value="and"> AND </option>
+        <option value="or"> OR </option>
+    </select>
+
+    <input text="text" id="keyword3" name="keyword_search3" maxlength= "50" size="100">
+        <select id="connector3" name="connect_keyword_1">
+        <option value="and"> AND </option>
+        <option value="or"> OR </option>
+    </select>
+
+    <input text="text" id="keyword4" name="keyword_search4" maxlength= "50" size="100">
+    <select id="connector4" name="connect_keyword_1">
+        <option value="and"> AND </option>
+        <option value="or"> OR </option>
+    </select>
+
+    <input text="text" id="keyword5" name="keyword_search5" maxlength= "50" size="100">
+    <br>
+
+    <label> Sort Results By: </label>
+    <br>
+    <input type="radio" id="mstart" name="sortdate" value="mission_start">
+    <label for="mstart"> Mission Start Date </label>
+
+    <input type="radio" id="mend" name="sortdate" value="mission_end">
+    <label for="mend"> Mission End Date </label>
+
+    <input type="radio" id="rdate" name="sortdate" value="study_release_date" checked>
+    <label for="rdate"> Public Release Date </label>
+    <br>
+
+    <label> Order By: </label>
+    <input type="radio" id="ascend" name="orderby" value="ASC">
+    <label for="ascend"> Ascending </label>
+
+    <input type="radio" id="desc" name="orderby" value="DESC" checked>
+    <label for="desc"> Descending </label>
+    <br>
+
     <input type="submit" value="Submit">
 </form>
+<br>
 
 {% endblock body %}
