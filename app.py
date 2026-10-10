@@ -287,6 +287,10 @@ def search_engine():
 
             study_dict = id_response.json()
 
+            # variables to retrieve dictionary data
+            study = study_dict[osd_id]
+            metadata = study.get("metadata", {})
+
             # insert metadata into table
             cursor.execute(
                     """INSERT INTO studies (id, rest_url, space_program, flight_program, mission_start, mission_end, mission_name, project_type, project_title, study_title, study_description, study_release_date, study_factor, publications, organism, assay_technology, assay_measure)
@@ -313,18 +317,119 @@ def search_engine():
                     )
                 )
         conn.commit()
-        conn.close()
+    
+    
+    # convert user keywords to a query
+    # keyword search query component
+    search_columns = [
+        "project_type",
+        "project_title",
+        "study_title",
+        "study_description",
+        "study_factor",
+        "publications",
+        "organism",
+        "assay_technology",
+        "assay_measure"
+    ]
+
+     # keywords
+    keywords = [
+        request.form.get("keyword_search1", "").strip(),
+        request.form.get("keyword_search2", "").strip(),
+        request.form.get("keyword_search3", "").strip(),
+        request.form.get("keyword_search4", "").strip(),
+        request.form.get("keyword_search5", "").strip()
+    ]
+
+    # Connectors
+    connectors = [
+        request.form.get("connect_keyword_1", "AND"),
+        request.form.get("connect_keyword_2", "AND"),
+        request.form.get("connect_keyword_3", "AND"),
+        request.form.get("connect_keyword_4", "AND")
+    ]
+
+    # other keywords
+    space_program = request.form.get("space_program")
+    flight_program = request.form.get("flight_program")
+    mission_name = request.form.get("mission_name")
+    sort_date = request.form.get("sortdate")
+    sort_direction = request.form.get("orderby")
+
+    user_query = []
+    params = []
+
+    # will store the full query
+    keyword_query = []
+    word_count = 0
+    for search in keywords:
+        # split each query into separate words
+        keywords = search.split()
+
+        for word in keywords:
+            # will store the in progress query for a specific word
+            keyword_conditions = ""
+
+            if word:
+                column_conditions = [f"{col} LIKE ?" for col in search_columns]
+
+                keyword_condition = ( "(" + " OR ".join(column_conditions) + ")")
+            
+            # append each completed condition for a word to the keyword_query list
+            keyword_query.append(keyword_condition)
+
+            # add word for the num of cols times to the params list
+            for col in search_columns:
+                params.append(f"%{word}%")
+
+    # join each keyword search with AND/OR as selected by the user
+    if keyword_query:
+        combined_keyword_query = keyword_query[0]
+
+        for i in range(1, len(keyword_query)):
+            connector = connectors[i - 1]
+
+            # ensure default connector is "AND"
+            if connector not in ("AND", "OR"):
+                connector = "AND"
+
+            combined_keyword_query += f" {connector} {keyword_query[i]}"
+
+    conditions = []
+    if combined_keyword_query:
+        conditions.append(combined_keyword_query)
+
+    if space_program:
+        conditions.append("space_program LIKE ?")
+        params.append(f"%{space_program}%")
+
+    if flight_program:
+        conditions.append("flight_program LIKE ?")
+        params.append(f"%{flight_program}%")
+
+    if mission_name:
+        conditions.append("mission_name LIKE ?")
+        params.append(f"%{mission_name}%")
+
+    # build query
+    user_query = "SELECT * FROM studies"
+
+    if conditions:
+        user_query += " WHERE " + " AND ".join(conditions)
+
+    user_query += f" ORDER BY {sort_date} {sort_direction}"
+
+    cursor.execute(user_query, params)
+    user_result = cursor.fetchall()
+    print(user_result)
+
+    #close database connection
+    conn.close()
 
     # return summary data for dashboard
     # data can be filtered as a user searches a query
     # e.g. user searches skeletal muscle --> dashboard adjusts 
-    # top number of studies by space program
-    # top project type
-    # top study factor keywords
-    # top organisms
-    # top study assay technology type 
-
-    # return rows for study summary cards based on user query
 
     return render_template("research.html")
 
