@@ -322,6 +322,10 @@ def search_engine():
     # convert user keywords to a query
     # keyword search query component
     search_columns = [
+        "id",
+        "space_program",
+        "flight_program",
+        "mission_name",
         "project_type",
         "project_title",
         "study_title",
@@ -364,9 +368,10 @@ def search_engine():
     keyword_query = []
     word_count = 0
     for search in keywords:
-        # split each query into separate words
+        # split each keyword query into separate words
         keywords = search.split()
 
+        # go through each word within the keyword query before going to the next keyword
         for word in keywords:
             # will store the in progress query for a specific word
             keyword_conditions = ""
@@ -421,17 +426,19 @@ def search_engine():
     user_query += f" ORDER BY {sort_date} {sort_direction}"
 
     cursor.execute(user_query, params)
-    user_result = cursor.fetchall()
-    print(user_result)
+    search_result = cursor.fetchall()
+    # get length of result to determine number of pages (10 studies shown per page)
+    pagination = int((len(search_result) + 10 - 1)/10)
+
+    print(f"Number of studies: {len(search_result)}")
+    print(search_result)
 
     #close database connection
     conn.close()
 
-    # return summary data for dashboard
-    # data can be filtered as a user searches a query
-    # e.g. user searches skeletal muscle --> dashboard adjusts 
+    # implement pagination 
 
-    return render_template("research.html")
+    return render_template("research.html", search_result = search_result, pagination=pagination)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))

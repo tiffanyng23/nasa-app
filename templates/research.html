@@ -2,68 +2,99 @@
 
 {% block body %}
 <h1> Explore Research Conducted in Space! </h1>
-<form id = "search-form" action="/research" method="POST">
-    <label for="sprogram"> Space Program: </label>
-    <input type="text" id="sprogram" name="space_program">
+<div class="search-container">
+    <form id = "search-form" action="/research" method="POST">
+        <label for="sprogram"> Space Program: </label>
+        <input type="text" id="sprogram" name="space_program">
 
-    <label for ="fprogram"> Flight Program: </label>
-    <input type="text" id="fprogram" name="flight_program">
+        <label for ="fprogram"> Flight Program: </label>
+        <input type="text" id="fprogram" name="flight_program">
 
-    <label for="mname"> Mission Name: </label>
-    <input type="text" id="mname" name="mission_name">
-    <br>
+        <label for="mname"> Mission Name: </label>
+        <input type="text" id="mname" name="mission_name">
+        <br>
 
-    <label> Keyword Search (include up to 5): </label>
-    <br>
-    <input text="text" id="keyword1" name="keyword_search1" maxlength= "50" size="100">
-    <select id="connector1" name="connect_keyword_1">
-        <option value="and"> AND </option>
-        <option value="or"> OR </option>
-    </select>
+        <label> Keyword Search (include up to 5): </label>
+        <br>
+        <input text="text" id="keyword1" name="keyword_search1" maxlength= "50">
+        <select id="connector1" name="connect_keyword_1">
+            <option value="and"> AND </option>
+            <option value="or"> OR </option>
+        </select>
 
-    <input text="text" id="keyword2" name="keyword_search2" maxlength= "50" size="100">
-    <select id="connector2" name="connect_keyword_2">
-        <option value="and"> AND </option>
-        <option value="or"> OR </option>
-    </select>
+        <input text="text" id="keyword2" name="keyword_search2" maxlength= "50">
+        <select id="connector2" name="connect_keyword_2">
+            <option value="and"> AND </option>
+            <option value="or"> OR </option>
+        </select>
 
-    <input text="text" id="keyword3" name="keyword_search3" maxlength= "50" size="100">
-        <select id="connector3" name="connect_keyword_3">
-        <option value="and"> AND </option>
-        <option value="or"> OR </option>
-    </select>
+        <input text="text" id="keyword3" name="keyword_search3" maxlength= "50">
+            <select id="connector3" name="connect_keyword_3">
+            <option value="and"> AND </option>
+            <option value="or"> OR </option>
+        </select>
 
-    <input text="text" id="keyword4" name="keyword_search4" maxlength= "50" size="100">
-    <select id="connector4" name="connect_keyword_4">
-        <option value="and"> AND </option>
-        <option value="or"> OR </option>
-    </select>
+        <input text="text" id="keyword4" name="keyword_search4" maxlength= "50">
+        <select id="connector4" name="connect_keyword_4">
+            <option value="and"> AND </option>
+            <option value="or"> OR </option>
+        </select>
 
-    <input text="text" id="keyword5" name="keyword_search5" maxlength= "50" size="100">
-    <br>
+        <input text="text" id="keyword5" name="keyword_search5" maxlength= "50">
+        <br>
 
-    <label> Sort Results By: </label>
-    <br>
-    <input type="radio" id="mstart" name="sortdate" value="mission_start">
-    <label for="mstart"> Mission Start Date </label>
+        <label> Sort Results By: </label>
+        <br>
+        <input type="radio" id="mstart" name="sortdate" value="mission_start">
+        <label for="mstart"> Mission Start Date </label>
 
-    <input type="radio" id="mend" name="sortdate" value="mission_end">
-    <label for="mend"> Mission End Date </label>
+        <input type="radio" id="mend" name="sortdate" value="mission_end">
+        <label for="mend"> Mission End Date </label>
 
-    <input type="radio" id="rdate" name="sortdate" value="study_release_date" checked>
-    <label for="rdate"> Public Release Date </label>
-    <br>
+        <input type="radio" id="rdate" name="sortdate" value="study_release_date" checked>
+        <label for="rdate"> Public Release Date </label>
+        <br>
 
-    <label> Order By: </label>
-    <input type="radio" id="ascend" name="orderby" value="ASC">
-    <label for="ascend"> Ascending </label>
+        <label> Order By: </label>
+        <input type="radio" id="ascend" name="orderby" value="ASC">
+        <label for="ascend"> Ascending </label>
 
-    <input type="radio" id="desc" name="orderby" value="DESC" checked>
-    <label for="desc"> Descending </label>
-    <br>
+        <input type="radio" id="desc" name="orderby" value="DESC" checked>
+        <label for="desc"> Descending </label>
+        <br>
 
-    <input type="submit" value="Submit">
-</form>
-<br>
+        <input type="submit" value="Submit">
+    </form>
+</div>
+
+<div>
+    <h3>Search Results</h3>
+    <div class="results-dashboard">
+        <div class="results-card">
+            <div class="results-card-body">
+                <p>Will show number of studies returned, top study factor, organism, technology, and measurement</p>
+            </div>
+        </div>
+    </div>
+    {% for result in search_result %}
+        <div class="research-card">
+            <div class="research-card-body">
+                <h3 class="study-description">{{ result[9] }}</h3>
+                <p class="study-description"> Study Factors: {{ result[12] }} | Organism: {{ result[14] }} | Assay Technology: {{ result[15] }} | Assay Measurement: {{ result[16] }}</p>
+                <p class="study-description">{{ result[10] }}</p>
+                <p class="study-description">Publication: {{ result[13] }}</p>
+                <p class="study-description">Space Program: {{ result[2] }} | Flight Program: {{ result [3] }} | Mission Name: {{ result[6] }}</p>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<div class="pagination">
+    <a href="#">&laquo;</a>
+    {% for page in range(pagination) %}
+        <a href="#"> {{ page + 1 }} </a>
+    {% endfor %}
+    <a href="#">&raquo;</a>
+</div>
 
 {% endblock body %}
