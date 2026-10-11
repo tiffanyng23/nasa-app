@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 
 {% block body %}
-<h1> Explore Research Conducted in Space! </h1>
+<h1>Open Science Data Repository Search </h1>
 <div class="search-container">
-    <form id = "search-form" action="/research" method="POST">
+    <form id = "search-form" action="/research" method="GET">
         <label for="sprogram"> Space Program: </label>
         <input type="text" id="sprogram" name="space_program">
 
@@ -16,50 +16,78 @@
 
         <label> Keyword Search (include up to 5): </label>
         <br>
-        <input text="text" id="keyword1" name="keyword_search1" maxlength= "50">
-        <select id="connector1" name="connect_keyword_1">
-            <option value="and"> AND </option>
-            <option value="or"> OR </option>
+        <input type="text" id="keyword1" name="keyword_1" maxlength= "50" value="{{ request.args.get('keyword_1', '') }}">
+        <select id="connector1" name="connector_1">
+            <option value="and"
+                {% if request.args.get('connector_1', 'and') == 'and' %}selected{% endif %}>
+                AND
+            </option>
+            <option value="or"
+                {% if request.args.get('connector_1', 'and') == 'or' %}selected{% endif %}>
+                OR
+            </option>
         </select>
 
-        <input text="text" id="keyword2" name="keyword_search2" maxlength= "50">
-        <select id="connector2" name="connect_keyword_2">
-            <option value="and"> AND </option>
-            <option value="or"> OR </option>
+        <input type="text" id="keyword2" name="keyword_2" maxlength= "50" value="{{ request.args.get('keyword_2', '') }}">
+        <select id="connector2" name="connector_2">
+            <option value="and"
+                {% if request.args.get('connector_2', 'and') == 'and' %}selected{% endif %}>
+                AND
+            </option>
+            <option value="or"
+                {% if request.args.get('connector_2', 'and') == 'or' %}selected{% endif %}>
+                OR
+            </option>
         </select>
 
-        <input text="text" id="keyword3" name="keyword_search3" maxlength= "50">
-            <select id="connector3" name="connect_keyword_3">
-            <option value="and"> AND </option>
-            <option value="or"> OR </option>
+        <input type="text" id="keyword3" name="keyword_3" maxlength= "50" value="{{ request.args.get('keyword_3', '') }}">
+        <select id="connector3" name="connector_3">
+            <option value="and"
+                {% if request.args.get('connector_3', 'and') == 'and' %}selected{% endif %}>
+                AND
+            </option>
+            <option value="or"
+                {% if request.args.get('connector_3', 'and') == 'or' %}selected{% endif %}>
+                OR
+            </option>
         </select>
 
-        <input text="text" id="keyword4" name="keyword_search4" maxlength= "50">
-        <select id="connector4" name="connect_keyword_4">
-            <option value="and"> AND </option>
-            <option value="or"> OR </option>
+        <input type="text" id="keyword4" name="keyword_4" maxlength= "50" value="{{ request.args.get('keyword_4', '') }}">
+        <select id="connector4" name="connector_4">
+            <option value="and"
+                {% if request.args.get('connector_4', 'and') == 'and' %}selected{% endif %}>
+                AND
+            </option>
+            <option value="or"
+                {% if request.args.get('connector_4', 'and') == 'or' %}selected{% endif %}>
+                OR
+            </option>
         </select>
 
-        <input text="text" id="keyword5" name="keyword_search5" maxlength= "50">
+        <input type="text" id="keyword5" name="keyword_5" maxlength= "50" value="{{ request.args.get('keyword_5', '') }}">
         <br>
 
         <label> Sort Results By: </label>
         <br>
-        <input type="radio" id="mstart" name="sortdate" value="mission_start">
+        <input type="radio" id="mstart" name="sortdate" 
+                value="mission_start" {% if request.args.get('sortdate', 'study_release_date') == 'mission_start' %}checked{% endif %}>
         <label for="mstart"> Mission Start Date </label>
 
-        <input type="radio" id="mend" name="sortdate" value="mission_end">
+        <input type="radio" id="mend" name="sortdate" 
+                value="mission_end" {% if request.args.get('sortdate', 'study_release_date') == 'mission_end' %}checked{% endif %}>
         <label for="mend"> Mission End Date </label>
 
-        <input type="radio" id="rdate" name="sortdate" value="study_release_date" checked>
+        <input type="radio" id="rdate" name="sortdate" 
+            value="study_release_date" {% if request.args.get('sortdate', 'study_release_date') == 'study_release_date' %}checked{% endif %}>
         <label for="rdate"> Public Release Date </label>
         <br>
 
         <label> Order By: </label>
-        <input type="radio" id="ascend" name="orderby" value="ASC">
+        <input type="radio" id="ascend" name="orderby" 
+            value="ASC" {% if request.args.get('orderby', 'DESC') == 'ASC' %}checked{% endif %}>
         <label for="ascend"> Ascending </label>
 
-        <input type="radio" id="desc" name="orderby" value="DESC" checked>
+        <input type="radio" id="desc" name="orderby" value="DESC" {% if request.args.get('orderby', 'DESC') == 'DESC' %}checked{% endif %}>
         <label for="desc"> Descending </label>
         <br>
 
@@ -69,32 +97,33 @@
 
 <div>
     <h3>Search Results</h3>
-    <div class="results-dashboard">
-        <div class="results-card">
-            <div class="results-card-body">
-                <p>Will show number of studies returned, top study factor, organism, technology, and measurement</p>
-            </div>
-        </div>
-    </div>
-    {% for result in search_result %}
+    <p>{{ total_results }} studies</p>
+    {% for result in page_result %}
         <div class="research-card">
             <div class="research-card-body">
                 <h3 class="study-description">{{ result[9] }}</h3>
-                <p class="study-description"> Study Factors: {{ result[12] }} | Organism: {{ result[14] }} | Assay Technology: {{ result[15] }} | Assay Measurement: {{ result[16] }}</p>
+                <br>
+                <p class="study-description"> Mission Date: {{ result[4] }} - {{ result[5] }} | Public Release Date: {{ result[11] }} </p>
+                <p class="study-description">Space Program: {{ result[2] }} | Flight Program: {{ result [3] }} | Mission Name: {{ result[6] }}</p>
+                <br>
                 <p class="study-description">{{ result[10] }}</p>
                 <p class="study-description">Publication: {{ result[13] }}</p>
-                <p class="study-description">Space Program: {{ result[2] }} | Flight Program: {{ result [3] }} | Mission Name: {{ result[6] }}</p>
+                <p class="study-description"> Study Factors: {{ result[12] }} | Organism: {{ result[14] }} | Assay Technology: {{ result[15] }} | Assay Measurement: {{ result[16] }}</p>
             </div>
         </div>
     {% endfor %}
 </div>
 
 <div class="pagination">
-    <a href="#">&laquo;</a>
-    {% for page in range(pagination) %}
-        <a href="#"> {{ page + 1 }} </a>
-    {% endfor %}
-    <a href="#">&raquo;</a>
+    {% if page > 1 %}
+        <a href="{{ url_for('search_engine', page=page - 1, **filters) }}" class="page-margins"> Previous </a>
+    {% endif %}
+
+    <p> Page {{ page }} of {{ total_pages }} </p>
+
+    {% if page < total_pages %}
+        <a href="{{ url_for('search_engine', page=page + 1, **filters) }}" class="page-margins"> Next </a>
+    {% endif %}
 </div>
 
 {% endblock body %}

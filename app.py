@@ -8,6 +8,7 @@ import pandas as pd
 import folium
 import os
 import sqlite3
+import math
 
 app = Flask(__name__)
 
@@ -235,13 +236,11 @@ def weekly_images():
         return render_template("space.html", images_data = images)
 
 # research studies
-@app.route("/research", methods= ["POST", "GET"])
-def search_engine():
-    # checks if db is up to date before returning results each type a user enters a search query
-    #api request to retrieve all study ids
-    if request.method == "POST":
+@app.route("/research", methods=["POST", "GET"])
+def search_engine():  
+    # Check if database is updated each type a user performs a search --> retrieve all study ids
+    if request.method == "GET":
         try:
-            #extract all datasets related to search
             response = requests.get(url="https://visualization.osdr.nasa.gov/biodata/api/v2/datasets/")
             response.raise_for_status()
             print(f"Open Science Data code: {response.status_code}")
@@ -254,9 +253,9 @@ def search_engine():
             return render_template("research.html")
     else:
         #before user types in search query
-        return render_template("research.html")
+        return render_template("research.html", pagination = pagination)
     
-    # convert json to dictionary
+    # create dictionary with id: url
     osd_dict = response.json()
     osd_data = {}
     for osd_id, endpoint in osd_dict.items():
@@ -266,7 +265,7 @@ def search_engine():
     conn = sqlite3.connect("nasa.db")
     cursor = conn.cursor()
 
-    # check if study id is in the database
+    # check if study id is in the existing database I made
     for osd_id in osd_data.keys():
         cursor.execute(
             "SELECT id FROM studies WHERE id = ?",
@@ -274,7 +273,7 @@ def search_engine():
         )
         result = cursor.fetchone()
 
-        # id is not in database --> second api request to get metadata
+        # id is not in database --> second api request to get metadata to insert into database
         if result is None:
             try:
                 id_response = requests.get(url=f"https://visualization.osdr.nasa.gov/biodata/api/v2/dataset/{osd_id}")
@@ -287,7 +286,7 @@ def search_engine():
 
             study_dict = id_response.json()
 
-            # variables to retrieve dictionary data
+            # variables used to retrieve dictionary data in api request
             study = study_dict[osd_id]
             metadata = study.get("metadata", {})
 
@@ -318,9 +317,9 @@ def search_engine():
                 )
         conn.commit()
     
-    
-    # convert user keywords to a query
-    # keyword search query component
+    # USER SEARCH QUERY
+    # build query based on user keywords
+    # database columns search will be conducted on
     search_columns = [
         "id",
         "space_program",
@@ -337,60 +336,41 @@ def search_engine():
         "assay_measure"
     ]
 
-     # keywords
-    keywords = [
-        request.form.get("keyword_search1", "").strip(),
-        request.form.get("keyword_search2", "").strip(),
-        request.form.get("keyword_search3", "").strip(),
-        request.form.get("keyword_search4", "").strip(),
-        request.form.get("keyword_search5", "").strip()
-    ]
-
-    # Connectors
-    connectors = [
-        request.form.get("connect_keyword_1", "AND"),
-        request.form.get("connect_keyword_2", "AND"),
-        request.form.get("connect_keyword_3", "AND"),
-        request.form.get("connect_keyword_4", "AND")
-    ]
+    # keywords and connectors
+    keywords = [request.args.get(f"keyword_{i}", "").strip() for i in range(1, 6)]
+    # convert connector value to uppercase for sql query
+    connectors = [request.args.get(f"connector_{i}", "and").upper() for i in range(1, 5)]
 
     # other keywords
-    space_program = request.form.get("space_program")
-    flight_program = request.form.get("flight_program")
-    mission_name = request.form.get("mission_name")
-    sort_date = request.form.get("sortdate")
-    sort_direction = request.form.get("orderby")
+    space_program = request.args.get("space_program")
+    flight_program = request.args.get("flight_program")
+    mission_name = request.args.get("mission_name")
+    sort_date = request.args.get("sortdate", "study_release_date")
+    sort_direction = request.args.get("orderby", "DESC")
 
+    # put together sql query
     user_query = []
     params = []
+    keyword_query = [] # will store the full query
 
-    # will store the full query
-    keyword_query = []
-    word_count = 0
-    for search in keywords:
-        # split each keyword query into separate words
-        keywords = search.split()
-
-        # go through each word within the keyword query before going to the next keyword
-        for word in keywords:
-            # will store the in progress query for a specific word
-            keyword_conditions = ""
-
-            if word:
-                column_conditions = [f"{col} LIKE ?" for col in search_columns]
-
-                keyword_condition = ( "(" + " OR ".join(column_conditions) + ")")
+    for word in keywords:
+        if word:
+            # add a like statement for each column for each keyword
+            column_conditions = [f"{col} LIKE ?" for col in search_columns]
+            # then add parentheses for correct syntax
+            keyword_condition = ( "(" + " OR ".join(column_conditions) + ")")
             
-            # append each completed condition for a word to the keyword_query list
+            # append each completed condition to the keyword_query list
             keyword_query.append(keyword_condition)
 
-            # add word for the num of cols times to the params list
+            # add keyword the num of cols times to the params list
             for col in search_columns:
                 params.append(f"%{word}%")
 
     # join each keyword search with AND/OR as selected by the user
+    keyword_connectors_query=[]
     if keyword_query:
-        combined_keyword_query = keyword_query[0]
+        keyword_connectors_query = keyword_query[0]
 
         for i in range(1, len(keyword_query)):
             connector = connectors[i - 1]
@@ -399,11 +379,11 @@ def search_engine():
             if connector not in ("AND", "OR"):
                 connector = "AND"
 
-            combined_keyword_query += f" {connector} {keyword_query[i]}"
+            keyword_connectors_query += f" {connector} {keyword_query[i]}"
 
     conditions = []
-    if combined_keyword_query:
-        conditions.append(combined_keyword_query)
+    if keyword_connectors_query:
+        conditions.append(keyword_connectors_query)
 
     if space_program:
         conditions.append("space_program LIKE ?")
@@ -417,6 +397,14 @@ def search_engine():
         conditions.append("mission_name LIKE ?")
         params.append(f"%{mission_name}%")
 
+    # get current page
+    page = request.args.get("page", 1, type=int)
+    page = max(1, page)
+    # num studies per page
+    per_page = 10
+    # offset for query result
+    offset = (page - 1) * per_page
+
     # build query
     user_query = "SELECT * FROM studies"
 
@@ -424,21 +412,33 @@ def search_engine():
         user_query += " WHERE " + " AND ".join(conditions)
 
     user_query += f" ORDER BY {sort_date} {sort_direction}"
-
+    print(params)
     cursor.execute(user_query, params)
-    search_result = cursor.fetchall()
-    # get length of result to determine number of pages (10 studies shown per page)
-    pagination = int((len(search_result) + 10 - 1)/10)
+    full_result = cursor.fetchall()
 
-    print(f"Number of studies: {len(search_result)}")
-    print(search_result)
+    # find number of results
+    total_results = len(full_result)
+
+    # total pages
+    total_pages = math.ceil(total_results / per_page)
+
+    # fetch studies only for current page
+    paginated_query = user_query + " LIMIT ? OFFSET ?"
+    cursor.execute(paginated_query, params + [per_page, offset])
+    page_result = cursor.fetchall()
+
+    # print results from query
+    print(page_result)
+    print(params)
 
     #close database connection
     conn.close()
 
-    # implement pagination 
+    # url components - uses keyword args 
+    filters = request.args.to_dict()
+    filters.pop("page", None)
 
-    return render_template("research.html", search_result = search_result, pagination=pagination)
+    return render_template("research.html", page_result = page_result, total_results = total_results, total_pages = total_pages, page = page, filters=filters)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))

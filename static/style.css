@@ -22,6 +22,7 @@ input {
 
 a {
     color: white;
+    display: inline-block;
 }
 
 p {
@@ -140,7 +141,7 @@ ul li a:hover {
 
 .research-card {
     display: flex;
-    background-color: rgba(37,61,102,0.8);
+    background-color: rgba(37,61,102,0.6);
     border-radius: 20px;
     gap: 10px;
     margin: 50px;
@@ -150,14 +151,17 @@ ul li a:hover {
     color: white;
     margin: 20px;
     padding: 20px;
+    text-align: left;
 
 }
 
-.results-card {
-    display: flex;
-    background-color: rgba(37,61,102,0.8);
-    border-radius: 20px;
-    gap: 10px;
-    margin: 50px;
+.pagination {
+    margin-left: 50px;
+    color: white;
+}
+
+.page-margins{
+    margin-right: 10px;
+    margin-left: 10px;
 }
 
