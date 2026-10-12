@@ -11,6 +11,11 @@ h3 {
     font-family: "Courier New", "Arial";
 }
 
+h4 {
+    color: white;
+    font-family: "Courier New", "Arial";
+}
+
 body {
     background-color: black;
 }
@@ -163,5 +168,11 @@ ul li a:hover {
 .page-margins{
     margin-right: 10px;
     margin-left: 10px;
+}
+
+.search-header {
+    color: white;
+    margin-left: 50px;
+    text-align: left; 
 }
 

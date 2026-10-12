@@ -14,7 +14,7 @@
         <input type="text" id="mname" name="mission_name">
         <br>
 
-        <label> Keyword Search (include up to 5): </label>
+        <label> Keywords (include up to 5): </label>
         <br>
         <input type="text" id="keyword1" name="keyword_1" maxlength= "50" value="{{ request.args.get('keyword_1', '') }}">
         <select id="connector1" name="connector_1">
@@ -96,8 +96,8 @@
 </div>
 
 <div>
-    <h3>Search Results</h3>
-    <p>{{ total_results }} studies</p>
+    <h3 class="search-header">Search Results</h3>
+    <p class="search-header">{{ total_results }} studies found</p>
     {% for result in page_result %}
         <div class="research-card">
             <div class="research-card-body">
@@ -107,7 +107,7 @@
                 <p class="study-description">Space Program: {{ result[2] }} | Flight Program: {{ result [3] }} | Mission Name: {{ result[6] }}</p>
                 <br>
                 <p class="study-description">{{ result[10] }}</p>
-                <p class="study-description">Publication: {{ result[13] }}</p>
+                <p class="study-description">Publications: {{ result[13] }}</p>
                 <p class="study-description"> Study Factors: {{ result[12] }} | Organism: {{ result[14] }} | Assay Technology: {{ result[15] }} | Assay Measurement: {{ result[16] }}</p>
             </div>
         </div>
