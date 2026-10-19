@@ -9,6 +9,7 @@ import folium
 import os
 import sqlite3
 import math
+import re
 
 app = Flask(__name__)
 
@@ -412,7 +413,6 @@ def search_engine():
         user_query += " WHERE " + " AND ".join(conditions)
 
     user_query += f" ORDER BY {sort_date} {sort_direction}"
-    print(params)
     cursor.execute(user_query, params)
     full_result = cursor.fetchall()
 
@@ -429,24 +429,31 @@ def search_engine():
 
     # extract all pubmed ids and construct url
     all_pmd_urls = {}
-    for row in page_results:
+    for row in page_result:
         # get osd_id and pubmed ids for the project
         osd_id = row[0]
+        pub_title = row[13]
+        
+        # separate pmd ids into individual elements and remove non numeric chars
         pubmed_ids = row[-1]
+        pubmed_ids = re.sub(r'[^a-zA-Z0-9]', ' ',pubmed_ids)
+        print(pubmed_ids)
+        cleaned_pmd_ids = pubmed_ids.split()
+        print(cleaned_pmd_ids)
 
         # temporarily hold all urls for a single project (row)
         project_urls = []
 
-        for pmd_id in pubmed_ids:
-            pmd_url = f"https://pubmed.ncbi.nlm.nih.gov/{pubmed_id}/"
+        for pmd_id in cleaned_pmd_ids:
+            pmd_url = f"https://pubmed.ncbi.nlm.nih.gov/{pmd_id}/"
             project_urls.append(pmd_url)
+            print(pmd_url)
         
         # add all the pubmed urls for the project to the main url listt
-        all_pmd_urls[osd_id ] = project_urls
+        all_pmd_urls[osd_id] = project_urls
 
     # print results from query
-    print(page_result)
-    print(params)
+    # print(page_result)
 
     #close database connection
     conn.close()
@@ -455,7 +462,7 @@ def search_engine():
     filters = request.args.to_dict()
     filters.pop("page", None)
 
-    return render_template("research.html", page_result = page_result, total_num_results = total_num_results, total_pages = total_pages, page = page, filters=filters, pubmed_urls = all_pmd_urls)
+    return render_template("research.html", page_result = page_result, total_num_results = total_num_results, total_pages = total_pages, page = page, filters=filters, pubmed_urls = all_pmd_urls, zip = zip)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))

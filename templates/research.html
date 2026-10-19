@@ -107,7 +107,12 @@
                 <p class="study-description">Space Program: {{ result[2] }} | Flight Program: {{ result [3] }} | Mission Name: {{ result[6] }}</p>
                 <br>
                 <p class="study-description">{{ result[10] }}</p>
-                <p class="study-description">{{ result[13] }}</p>
+                <p class="study-description">Publications: </p>
+                {% for pub in pubmed_urls[result[0]] %}
+                    <a href= {{ pub }} target="_blank"> {{ pub }} </a>
+                    <br> 
+                {% endfor %}
+                <br>
                 <p class="study-description"> Study Factors: {{ result[12] }} | Organism: {{ result[14] }} | Assay Technology: {{ result[15] }} | Assay Measurement: {{ result[16] }}</p>
             </div>
         </div>
