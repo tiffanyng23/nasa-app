@@ -417,15 +417,32 @@ def search_engine():
     full_result = cursor.fetchall()
 
     # find number of results
-    total_results = len(full_result)
+    total_num_results = len(full_result)
 
     # total pages
-    total_pages = math.ceil(total_results / per_page)
+    total_pages = math.ceil(total_num_results / per_page)
 
     # fetch studies only for current page
     paginated_query = user_query + " LIMIT ? OFFSET ?"
     cursor.execute(paginated_query, params + [per_page, offset])
     page_result = cursor.fetchall()
+
+    # extract all pubmed ids and construct url
+    all_pmd_urls = {}
+    for row in page_results:
+        # get osd_id and pubmed ids for the project
+        osd_id = row[0]
+        pubmed_ids = row[-1]
+
+        # temporarily hold all urls for a single project (row)
+        project_urls = []
+
+        for pmd_id in pubmed_ids:
+            pmd_url = f"https://pubmed.ncbi.nlm.nih.gov/{pubmed_id}/"
+            project_urls.append(pmd_url)
+        
+        # add all the pubmed urls for the project to the main url listt
+        all_pmd_urls[osd_id ] = project_urls
 
     # print results from query
     print(page_result)
@@ -438,7 +455,7 @@ def search_engine():
     filters = request.args.to_dict()
     filters.pop("page", None)
 
-    return render_template("research.html", page_result = page_result, total_results = total_results, total_pages = total_pages, page = page, filters=filters)
+    return render_template("research.html", page_result = page_result, total_num_results = total_num_results, total_pages = total_pages, page = page, filters=filters, pubmed_urls = all_pmd_urls)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))

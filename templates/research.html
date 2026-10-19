@@ -97,7 +97,7 @@
 
 <div>
     <h3 class="search-header">Search Results</h3>
-    <p class="search-header">{{ total_results }} studies found</p>
+    <p class="search-header">{{ total_num_results }} studies found</p>
     {% for result in page_result %}
         <div class="research-card">
             <div class="research-card-body">
@@ -107,7 +107,7 @@
                 <p class="study-description">Space Program: {{ result[2] }} | Flight Program: {{ result [3] }} | Mission Name: {{ result[6] }}</p>
                 <br>
                 <p class="study-description">{{ result[10] }}</p>
-                <p class="study-description">Publications: {{ result[13] }}</p>
+                <p class="study-description">{{ result[13] }}</p>
                 <p class="study-description"> Study Factors: {{ result[12] }} | Organism: {{ result[14] }} | Assay Technology: {{ result[15] }} | Assay Measurement: {{ result[16] }}</p>
             </div>
         </div>

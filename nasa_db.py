@@ -3,6 +3,11 @@ import requests
 import os
 import sqlite3
 from datetime import datetime, timezone
+import time
+
+# this script was created to make a new table and insert all the NASA osd studies available via the NASA OSD API
+# now run this script to update the database with newly released NASA projects
+
 
 #metadata helper functions
 # handle metadata that returns strings or lists or are empty
@@ -46,7 +51,8 @@ cursor.execute("""
             publications TEXT,
             organism TEXT,
             assay_technology TEXT,
-            assay_measure TEXT
+            assay_measure TEXT,
+            publications_urls TEXT
         )
     """)
 conn.commit()
@@ -69,7 +75,7 @@ osd_data = {}
 for osd_id, endpoint in osd_dict.items():
     osd_data[osd_id] = endpoint["REST_URL"]
 
-# check if study id is in the database
+# check if each study id is in the database
 for osd_id in osd_data.keys():
     cursor.execute(
             "SELECT id FROM studies WHERE id = ?",
@@ -97,7 +103,7 @@ for osd_id in osd_data.keys():
 
         # insert metadata into table
         cursor.execute(
-                    """INSERT INTO studies (id, rest_url, space_program, flight_program, mission_start, mission_end, mission_name, project_type, project_title, study_title, study_description, study_release_date, study_factor, publications, organism, assay_technology, assay_measure)
+                    """INSERT INTO studies (id, rest_url, space_program, flight_program, mission_start, mission_end, mission_name, project_type, project_title, study_title, study_description, study_release_date, study_factor, publications, organism, assay_technology, assay_measure, publications_urls)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """, 
                         (
@@ -117,11 +123,12 @@ for osd_id in osd_data.keys():
                             format_metadata(metadata.get("study publication title")),
                             format_metadata(metadata.get("organism")),
                             format_metadata(metadata.get("study assay technology type")),
-                            format_metadata(metadata.get("study assay measurement type"))
+                            format_metadata(metadata.get("study assay measurement type")),
+                            "To Be Added Soon"
                     )
         )
         print(osd_id)
 
-print("rows inserted")
+print("rows inserted successfully")
 conn.commit()
 conn.close()
