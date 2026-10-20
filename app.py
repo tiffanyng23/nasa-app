@@ -241,235 +241,166 @@ def weekly_images():
 def search_engine():  
     # Check if database is updated each type a user performs a search --> retrieve all study ids
     if request.method == "GET":
-        try:
-            response = requests.get(url="https://visualization.osdr.nasa.gov/biodata/api/v2/datasets/")
-            response.raise_for_status()
-            print(f"Open Science Data code: {response.status_code}")
-        except requests.exceptions.HTTPError as http_error:
-            print(f"Open Science Data HTTP Error: {http_error}")
-            # if api request fails --> still display the same page
-            return render_template("research.html")
-        except requests.exceptions.RequestException as error:
-            print(f"Open Science Data  Error: {error}")
-            return render_template("research.html")
+        conn = sqlite3.connect("nasa.db")
+        cursor = conn.cursor()
+        
+        # USER SEARCH QUERY
+        # build query based on user keywords
+        # database columns search will be conducted on
+        search_columns = [
+            "id",
+            "space_program",
+            "flight_program",
+            "mission_name",
+            "project_type",
+            "project_title",
+            "study_title",
+            "study_description",
+            "study_factor",
+            "publications",
+            "organism",
+            "assay_technology",
+            "assay_measure"
+        ]
+
+        # keywords and connectors
+        keywords = [request.args.get(f"keyword_{i}", "").strip() for i in range(1, 6)]
+        # convert connector value to uppercase for sql query
+        connectors = [request.args.get(f"connector_{i}", "and").upper() for i in range(1, 5)]
+
+        # other keywords
+        space_program = request.args.get("space_program")
+        flight_program = request.args.get("flight_program")
+        mission_name = request.args.get("mission_name")
+        sort_date = request.args.get("sortdate", "study_release_date")
+        sort_direction = request.args.get("orderby", "DESC")
+
+        # put together sql query
+        user_query = []
+        params = []
+        keyword_query = [] # will store the full query
+
+        for word in keywords:
+            if word:
+                # add a like statement for each column for each keyword
+                column_conditions = [f"{col} LIKE ?" for col in search_columns]
+                # then add parentheses for correct syntax
+                keyword_condition = ( "(" + " OR ".join(column_conditions) + ")")
+                
+                # append each completed condition to the keyword_query list
+                keyword_query.append(keyword_condition)
+
+                # add keyword the num of cols times to the params list
+                for col in search_columns:
+                    params.append(f"%{word}%")
+
+        # join each keyword search with AND/OR as selected by the user
+        keyword_connectors_query=[]
+        if keyword_query:
+            keyword_connectors_query = keyword_query[0]
+
+            for i in range(1, len(keyword_query)):
+                connector = connectors[i - 1]
+
+                # ensure default connector is "AND"
+                if connector not in ("AND", "OR"):
+                    connector = "AND"
+
+                keyword_connectors_query += f" {connector} {keyword_query[i]}"
+
+        conditions = []
+        if keyword_connectors_query:
+            conditions.append(keyword_connectors_query)
+
+        if space_program:
+            conditions.append("space_program LIKE ?")
+            params.append(f"%{space_program}%")
+
+        if flight_program:
+            conditions.append("flight_program LIKE ?")
+            params.append(f"%{flight_program}%")
+
+        if mission_name:
+            conditions.append("mission_name LIKE ?")
+            params.append(f"%{mission_name}%")
+
+        # get current page
+        page = request.args.get("page", 1, type=int)
+        page = max(1, page)
+        # num studies per page
+        per_page = 10
+        # offset for query result
+        offset = (page - 1) * per_page
+
+        # build query
+        user_query = "SELECT * FROM studies"
+
+        if conditions:
+            user_query += " WHERE " + " AND ".join(conditions)
+
+        user_query += f" ORDER BY {sort_date} {sort_direction}"
+        cursor.execute(user_query, params)
+        full_result = cursor.fetchall()
+
+        # find number of results
+        total_num_results = len(full_result)
+
+        # total pages
+        total_pages = math.ceil(total_num_results / per_page)
+
+        # fetch studies only for current page
+        paginated_query = user_query + " LIMIT ? OFFSET ?"
+        cursor.execute(paginated_query, params + [per_page, offset])
+        page_result = cursor.fetchall()
+
+        # extract all pubmed ids and construct url
+        all_pmd_urls = {}
+        all_titles = {}
+        for row in page_result:
+            # get osd_id and pubmed ids for the project
+            osd_id = row[0]
+            publications = row[13]
+
+            # clean titles for that row
+            publications = publications.split(";")
+            cleaned_titles = [pub.lstrip() for pub in publications]
+
+            # temporarily hold all urls and titles for a single project (row)
+            project_urls = []
+            
+            # remove non numeric chars and separate pmd ids into individual elements
+            pubmed_ids = row[-1]
+            if pubmed_ids is None:
+                cleaned_pubmed_ids = []
+            
+            #only contruct urls if there are pubmed ids
+            if pubmed_ids:
+                pubmed_ids = re.sub(r'[^a-zA-Z0-9]', ' ',pubmed_ids)
+                cleaned_pmd_ids = pubmed_ids.split()
+
+                # construct pubmed urls for each pubs in that project
+                for title, pmd_id in zip(cleaned_titles, cleaned_pmd_ids):
+                    pmd_url = f"https://pubmed.ncbi.nlm.nih.gov/{pmd_id}/"
+                    project_urls.append([title, pmd_url])
+                    print([title, pmd_url])
+                
+            # add all the pubmed urls for the project(row) to the main url list
+            all_pmd_urls[osd_id] = project_urls
+            print(all_pmd_urls[osd_id])
+
+        #close database connection
+        conn.close()
+
+        # url components - uses keyword args 
+        filters = request.args.to_dict()
+        filters.pop("page", None)
+
+        return render_template("research.html", page_result = page_result, total_num_results = total_num_results, total_pages = total_pages, page = page, filters=filters, pmd_urls = all_pmd_urls)
+        
     else:
         #before user types in search query
         return render_template("research.html")
-    
-    # create dictionary with id: url
-    osd_dict = response.json()
-    osd_data = {}
-    for osd_id, endpoint in osd_dict.items():
-        osd_data[osd_id] = endpoint["REST_URL"]
 
-    # connect to nasa.db 
-    conn = sqlite3.connect("nasa.db")
-    cursor = conn.cursor()
-
-    # check if study id is in the existing database I made
-    for osd_id in osd_data.keys():
-        cursor.execute(
-            "SELECT id FROM studies WHERE id = ?",
-            (osd_id,)
-        )
-        result = cursor.fetchone()
-
-        # id is not in database --> second api request to get metadata to insert into database
-        if result is None:
-            try:
-                id_response = requests.get(url=f"https://visualization.osdr.nasa.gov/biodata/api/v2/dataset/{osd_id}")
-                id_response.raise_for_status()
-                print(f"Study Retrieval code: {response.status_code}")
-            except requests.exceptions.HTTPError as http_error:
-                print(f"Study Retrieval HTTP Error: {http_error}")
-            except requests.exceptions.RequestException as error:
-                print(f"Study Retrieval  Error: {error}")
-
-            study_dict = id_response.json()
-
-            # variables used to retrieve dictionary data in api request
-            study = study_dict[osd_id]
-            metadata = study.get("metadata", {})
-
-            # insert metadata into table
-            cursor.execute(
-                    """INSERT INTO studies (id, rest_url, space_program, flight_program, mission_start, mission_end, mission_name, project_type, project_title, study_title, study_description, study_release_date, study_factor, publications, organism, assay_technology, assay_measure)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        """, 
-                        (
-                            osd_id,
-                            study.get("REST_URL"),
-                            format_metadata(metadata.get("space program")),
-                            format_metadata(metadata.get("flight program")),
-                            format_metadata(metadata.get("mission", {}).get("start date")),
-                            format_metadata(metadata.get("mission", {}).get("end date")),
-                            format_metadata(metadata.get("mission", {}).get("name")),
-                            format_metadata(metadata.get("project type")),
-                            format_metadata(metadata.get("project title")),
-                            format_metadata(metadata.get("study title")),
-                            format_metadata(metadata.get("study description")),
-                            format_date(format_metadata(metadata.get("study public release date"))),
-                            format_metadata(metadata.get("study factor type")),
-                            format_metadata(metadata.get("study publication title")),
-                            format_metadata(metadata.get("organism")),
-                            format_metadata(metadata.get("study assay technology type")),
-                            format_metadata(metadata.get("study assay measurement type"))
-                    )
-                )
-        conn.commit()
-    
-    # USER SEARCH QUERY
-    # build query based on user keywords
-    # database columns search will be conducted on
-    search_columns = [
-        "id",
-        "space_program",
-        "flight_program",
-        "mission_name",
-        "project_type",
-        "project_title",
-        "study_title",
-        "study_description",
-        "study_factor",
-        "publications",
-        "organism",
-        "assay_technology",
-        "assay_measure"
-    ]
-
-    # keywords and connectors
-    keywords = [request.args.get(f"keyword_{i}", "").strip() for i in range(1, 6)]
-    # convert connector value to uppercase for sql query
-    connectors = [request.args.get(f"connector_{i}", "and").upper() for i in range(1, 5)]
-
-    # other keywords
-    space_program = request.args.get("space_program")
-    flight_program = request.args.get("flight_program")
-    mission_name = request.args.get("mission_name")
-    sort_date = request.args.get("sortdate", "study_release_date")
-    sort_direction = request.args.get("orderby", "DESC")
-
-    # put together sql query
-    user_query = []
-    params = []
-    keyword_query = [] # will store the full query
-
-    for word in keywords:
-        if word:
-            # add a like statement for each column for each keyword
-            column_conditions = [f"{col} LIKE ?" for col in search_columns]
-            # then add parentheses for correct syntax
-            keyword_condition = ( "(" + " OR ".join(column_conditions) + ")")
-            
-            # append each completed condition to the keyword_query list
-            keyword_query.append(keyword_condition)
-
-            # add keyword the num of cols times to the params list
-            for col in search_columns:
-                params.append(f"%{word}%")
-
-    # join each keyword search with AND/OR as selected by the user
-    keyword_connectors_query=[]
-    if keyword_query:
-        keyword_connectors_query = keyword_query[0]
-
-        for i in range(1, len(keyword_query)):
-            connector = connectors[i - 1]
-
-            # ensure default connector is "AND"
-            if connector not in ("AND", "OR"):
-                connector = "AND"
-
-            keyword_connectors_query += f" {connector} {keyword_query[i]}"
-
-    conditions = []
-    if keyword_connectors_query:
-        conditions.append(keyword_connectors_query)
-
-    if space_program:
-        conditions.append("space_program LIKE ?")
-        params.append(f"%{space_program}%")
-
-    if flight_program:
-        conditions.append("flight_program LIKE ?")
-        params.append(f"%{flight_program}%")
-
-    if mission_name:
-        conditions.append("mission_name LIKE ?")
-        params.append(f"%{mission_name}%")
-
-    # get current page
-    page = request.args.get("page", 1, type=int)
-    page = max(1, page)
-    # num studies per page
-    per_page = 10
-    # offset for query result
-    offset = (page - 1) * per_page
-
-    # build query
-    user_query = "SELECT * FROM studies"
-
-    if conditions:
-        user_query += " WHERE " + " AND ".join(conditions)
-
-    user_query += f" ORDER BY {sort_date} {sort_direction}"
-    cursor.execute(user_query, params)
-    full_result = cursor.fetchall()
-
-    # find number of results
-    total_num_results = len(full_result)
-
-    # total pages
-    total_pages = math.ceil(total_num_results / per_page)
-
-    # fetch studies only for current page
-    paginated_query = user_query + " LIMIT ? OFFSET ?"
-    cursor.execute(paginated_query, params + [per_page, offset])
-    page_result = cursor.fetchall()
-
-    # extract all pubmed ids and construct url
-    all_pmd_urls = {}
-    all_titles = {}
-    for row in page_result:
-        # get osd_id and pubmed ids for the project
-        osd_id = row[0]
-        publications = row[13]
-
-        # clean titles for that row
-        publications = publications.split(";")
-        cleaned_titles = [pub.lstrip() for pub in publications]
-
-        # temporarily hold all urls and titles for a single project (row)
-        project_urls = []
-        
-        # remove non numeric chars and separate pmd ids into individual elements
-        pubmed_ids = row[-1]
-        if pubmed_ids is None:
-            cleaned_pubmed_ids = []
-        
-        #only contruct urls if there are pubmed ids
-        if pubmed_ids:
-            pubmed_ids = re.sub(r'[^a-zA-Z0-9]', ' ',pubmed_ids)
-            cleaned_pmd_ids = pubmed_ids.split()
-
-            # construct pubmed urls for each pubs in that project
-            for title, pmd_id in zip(cleaned_titles, cleaned_pmd_ids):
-                pmd_url = f"https://pubmed.ncbi.nlm.nih.gov/{pmd_id}/"
-                project_urls.append([title, pmd_url])
-                print([title, pmd_url])
-            
-        # add all the pubmed urls for the project(row) to the main url list
-        all_pmd_urls[osd_id] = project_urls
-        print(all_pmd_urls[osd_id])
-
-    #close database connection
-    conn.close()
-
-    # url components - uses keyword args 
-    filters = request.args.to_dict()
-    filters.pop("page", None)
-
-    return render_template("research.html", page_result = page_result, total_num_results = total_num_results, total_pages = total_pages, page = page, filters=filters, pmd_urls = all_pmd_urls)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
