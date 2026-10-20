@@ -401,7 +401,6 @@ def search_engine():
         #before user types in search query
         return render_template("research.html")
 
-
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port, debug=True)
