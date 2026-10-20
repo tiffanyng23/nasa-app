@@ -6,8 +6,8 @@ from datetime import datetime, timezone
 import time
 
 # this script was created to make a new table and insert all the NASA osd studies available via the NASA OSD API
-# now run this script to update the database with newly released NASA projects
-
+# now run this script to update the database with newly released NASA projects 
+# all cols will be populated except the publications_urls column
 
 #metadata helper functions
 # handle metadata that returns strings or lists or are empty
@@ -17,7 +17,7 @@ def format_metadata(value):
         return ""
     # check if metadata is a string
     if isinstance(value, list):
-        return ", ".join(value)
+        return "; ".join(value)
     # else, no need to format
     return value
 
@@ -49,6 +49,7 @@ cursor.execute("""
             study_release_date DATE,
             study_factor TEXT,
             publications TEXT,
+            pub_authors TEXT,
             organism TEXT,
             assay_technology TEXT,
             assay_measure TEXT,
@@ -69,7 +70,7 @@ except requests.exceptions.HTTPError as http_error:
 except requests.exceptions.RequestException as error:
     print(f"Open Science Data  Error: {error}")
     
-# convert json to dictionary
+# extract osd_id and url of metadata
 osd_dict = response.json()
 osd_data = {}
 for osd_id, endpoint in osd_dict.items():
@@ -101,10 +102,10 @@ for osd_id in osd_data.keys():
         study = study_dict[osd_id]
         metadata = study.get("metadata", {})
 
-        # insert metadata into table
+        # retrieve + insert metadata into table
         cursor.execute(
-                    """INSERT INTO studies (id, rest_url, space_program, flight_program, mission_start, mission_end, mission_name, project_type, project_title, study_title, study_description, study_release_date, study_factor, publications, organism, assay_technology, assay_measure, publications_urls)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """INSERT INTO studies (id, rest_url, space_program, flight_program, mission_start, mission_end, mission_name, project_type, project_title, study_title, study_description, study_release_date, study_factor, publications, pub_authors, organism, assay_technology, assay_measure)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """, 
                         (
                             osd_id,
@@ -121,10 +122,10 @@ for osd_id in osd_data.keys():
                             format_date(format_metadata(metadata.get("study public release date"))),
                             format_metadata(metadata.get("study factor type")),
                             format_metadata(metadata.get("study publication title")),
+                            format_metadata(metadata.get("study publication author list")),
                             format_metadata(metadata.get("organism")),
                             format_metadata(metadata.get("study assay technology type")),
-                            format_metadata(metadata.get("study assay measurement type")),
-                            "To Be Added Soon"
+                            format_metadata(metadata.get("study assay measurement type"))
                     )
         )
         print(osd_id)

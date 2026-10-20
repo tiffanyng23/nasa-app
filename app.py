@@ -254,7 +254,7 @@ def search_engine():
             return render_template("research.html")
     else:
         #before user types in search query
-        return render_template("research.html", pagination = pagination)
+        return render_template("research.html")
     
     # create dictionary with id: url
     osd_dict = response.json()
@@ -429,31 +429,38 @@ def search_engine():
 
     # extract all pubmed ids and construct url
     all_pmd_urls = {}
+    all_titles = {}
     for row in page_result:
         # get osd_id and pubmed ids for the project
         osd_id = row[0]
-        pub_title = row[13]
-        
-        # separate pmd ids into individual elements and remove non numeric chars
-        pubmed_ids = row[-1]
-        pubmed_ids = re.sub(r'[^a-zA-Z0-9]', ' ',pubmed_ids)
-        print(pubmed_ids)
-        cleaned_pmd_ids = pubmed_ids.split()
-        print(cleaned_pmd_ids)
+        publications = row[13]
 
-        # temporarily hold all urls for a single project (row)
+        # clean titles for that row
+        publications = publications.split(";")
+        cleaned_titles = [pub.lstrip() for pub in publications]
+
+        # temporarily hold all urls and titles for a single project (row)
         project_urls = []
-
-        for pmd_id in cleaned_pmd_ids:
-            pmd_url = f"https://pubmed.ncbi.nlm.nih.gov/{pmd_id}/"
-            project_urls.append(pmd_url)
-            print(pmd_url)
         
-        # add all the pubmed urls for the project to the main url listt
-        all_pmd_urls[osd_id] = project_urls
+        # remove non numeric chars and separate pmd ids into individual elements
+        pubmed_ids = row[-1]
+        if pubmed_ids is None:
+            cleaned_pubmed_ids = []
+        
+        #only contruct urls if there are pubmed ids
+        if pubmed_ids:
+            pubmed_ids = re.sub(r'[^a-zA-Z0-9]', ' ',pubmed_ids)
+            cleaned_pmd_ids = pubmed_ids.split()
 
-    # print results from query
-    # print(page_result)
+            # construct pubmed urls for each pubs in that project
+            for title, pmd_id in zip(cleaned_titles, cleaned_pmd_ids):
+                pmd_url = f"https://pubmed.ncbi.nlm.nih.gov/{pmd_id}/"
+                project_urls.append([title, pmd_url])
+                print([title, pmd_url])
+            
+        # add all the pubmed urls for the project(row) to the main url list
+        all_pmd_urls[osd_id] = project_urls
+        print(all_pmd_urls[osd_id])
 
     #close database connection
     conn.close()
@@ -462,7 +469,7 @@ def search_engine():
     filters = request.args.to_dict()
     filters.pop("page", None)
 
-    return render_template("research.html", page_result = page_result, total_num_results = total_num_results, total_pages = total_pages, page = page, filters=filters, pubmed_urls = all_pmd_urls, zip = zip)
+    return render_template("research.html", page_result = page_result, total_num_results = total_num_results, total_pages = total_pages, page = page, filters=filters, pmd_urls = all_pmd_urls)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
