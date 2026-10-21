@@ -63,7 +63,7 @@ def events():
     except requests.exceptions.HTTPError as http_error:
         print(f"EONET HTTP Error: {http_error}")
         #create map
-        m = folium.Map(location=(20, 0), zoom_start=2, tiles="OpenStreetMap")
+        m = folium.Map(location=(20, 0), zoom_start=2, tiles="OpenStreetMap") .add_child
         map_html = m._repr_html_()
         today = datetime.today().strftime("%Y-%m-%d") #assign today value
         return render_template("events.html", map_html=map_html, start=start, end=end, today=today, event_type=categories)
