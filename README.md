@@ -11,9 +11,9 @@ This page displays NASA's Astronomy Picture of the Day (APOD) for the past 10 da
 This page allows users to track natural event occurences on a map. The data is sourced from the NASA Earth Observatory Natural Event Tracker (EONET) API. Users are able to select a time window for natural event occurences by choosing a start and end date. Please note that the natural events tracked in this API appear to be only wildfires, severe storms (hurricanes, cyclones, tornadoes, etc.), and volcanic eruptions. It is possible that the API does not comprehensively track all occurences of these events.
 
 ### Open Science Data Repository Page
-This page is currently in progress
+This page will integrate the Open Science Data API, allowing users to search for projects/studies conducted in space. Users can type in keywords to filter for research studies, and customize how the results are sorted (by mission start/end date, or study public release date). Each result displays in a summary card informatio nsuch as: the space/flight program, mission dates, study title and description, publication titles hyperlinked to Pubmed, and other information about the study.
 
-When completed, this page will integrate the OSD API, allowing users to search for projects/studies conducted in space. Users can type in keywords to filter for research studies, and customize how the results are sorted (by mission start/end date, or study public release date). 
+What makes this page differ from the Open Science Data Repository on the NASA website is that I also integrated the Pubmed API, by using the API to search for publication titles (made available from the OSD API)from each project. If there is a match, then the associated pubmed publication link is listed within the results card for the project. This allows users to quickly read the study description and then view publications from the project.
 
 
 ## How to Use this Project
