@@ -185,7 +185,6 @@ def earth_images():
 def weekly_images():
     #get nasa api key
     nasa_api_key = os.environ.get("NASA_API_KEY")
-    print(nasa_api_key)
     date = datetime.today().strftime("%Y-%m-%d")
     start = (datetime.today() - timedelta(days=10)).strftime("%Y-%m-%d")
 
